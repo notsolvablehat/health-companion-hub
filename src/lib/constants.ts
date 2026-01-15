@@ -64,6 +64,30 @@ export const CASE_STATUS = {
   CLOSED: 'closed',
 } as const;
 
+export const CASE_STATUS_LABELS: Record<string, string> = {
+  open: 'Open',
+  in_review: 'In Review',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  closed: 'Closed',
+};
+
+export const CASE_STATUS_COLORS: Record<string, string> = {
+  open: 'bg-info/10 text-info',
+  in_review: 'bg-warning/10 text-warning',
+  approved: 'bg-success/10 text-success',
+  rejected: 'bg-destructive/10 text-destructive',
+  closed: 'bg-muted text-muted-foreground',
+};
+
+export const REPORT_STATUS = {
+  PENDING: 'pending',
+  UPLOADED: 'uploaded',
+  PROCESSING: 'processing',
+  ANALYZED: 'analyzed',
+  FAILED: 'failed',
+} as const;
+
 export const FILE_UPLOAD = {
   MAX_SIZE: 20 * 1024 * 1024, // 20MB
   ACCEPTED_TYPES: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
@@ -71,18 +95,27 @@ export const FILE_UPLOAD = {
 } as const;
 
 export const QUERY_KEYS = {
-  CURRENT_USER: ['currentUser'],
-  USER_PROFILE: ['userProfile'],
-  CASES: ['cases'],
-  CASE_DETAIL: (id: string) => ['cases', id],
-  REPORTS: ['reports'],
-  REPORT_DETAIL: (id: string) => ['reports', id],
-  ASSIGNMENTS: ['assignments'],
-  MY_PATIENTS: ['assignments', 'patients'],
-  MY_DOCTORS: ['assignments', 'doctors'],
-  CHATS: ['chats'],
-  CHAT_DETAIL: (id: string) => ['chats', id],
-  INSIGHTS: (patientId: string) => ['insights', patientId],
+  // Auth
+  CURRENT_USER: ['currentUser'] as const,
+  USER_PROFILE: ['userProfile'] as const,
+  
+  // Cases
+  CASES: ['cases'] as const,
+  CASE_DETAIL: (id: string) => ['cases', id] as const,
+  
+  // Reports
+  REPORTS: ['reports'] as const,
+  REPORT_DETAIL: (id: string) => ['reports', id] as const,
+  
+  // Assignments
+  ASSIGNMENTS: ['assignments'] as const,
+  MY_PATIENTS: ['assignments', 'patients'] as const,
+  MY_DOCTORS: ['assignments', 'doctors'] as const,
+  
+  // AI
+  CHATS: ['chats'] as const,
+  CHAT_DETAIL: (id: string) => ['chats', id] as const,
+  INSIGHTS: (patientId: string) => ['insights', patientId] as const,
 } as const;
 
 export const ROUTES = {
@@ -98,6 +131,7 @@ export const ROUTES = {
   PATIENT_REPORTS: '/patient/reports',
   PATIENT_DOCTORS: '/patient/doctors',
   PATIENT_CHAT: '/patient/chat',
+  PATIENT_CHAT_DETAIL: (id: string) => `/patient/chat/${id}`,
   
   // Doctor
   DOCTOR_DASHBOARD: '/doctor/dashboard',
@@ -106,6 +140,7 @@ export const ROUTES = {
   DOCTOR_CASES: '/doctor/cases',
   DOCTOR_CASE_REVIEW: (id: string) => `/doctor/cases/${id}`,
   DOCTOR_CHAT: '/doctor/chat',
+  DOCTOR_CHAT_DETAIL: (id: string) => `/doctor/chat/${id}`,
   
   // Shared
   PROFILE: '/profile',

@@ -679,29 +679,29 @@ if str(user.role) == "doctor":
 - [x] Verify redirect to patient dashboard
 - [x] Attempt to onboard again (should fail with 400)
 
-### Doctor Onboarding (NEEDS CLARIFICATION)
-- [ ] Register new doctor account
-- [ ] Verify doctor's `is_onboarded` status
-- [ ] Determine if doctors need onboarding
-- [ ] Test doctor profile creation process
+### Doctor Onboarding (IMPLEMENTED)
+- [x] Register new doctor account
+- [x] Verify doctor's `is_onboarded` status
+- [x] Determine if doctors need onboarding
+- [x] Test doctor profile creation process
 
-### Update Profile (NOT IMPLEMENTED)
-- [ ] Create update profile UI
-- [ ] Test updating patient profile fields
-- [ ] Verify changes persist in database
+### Update Profile (IMPLEMENTED)
+- [x] Create update profile UI
+- [x] Test updating patient profile fields
+- [x] Verify changes persist in database
 - [ ] Verify only allowed fields can be updated
 
-### Update Name (NOT IMPLEMENTED)
-- [ ] Create name update UI
-- [ ] Test updating user name
-- [ ] Verify name change reflects in profile
+### Update Name (IMPLEMENTED)
+- [x] Create name update UI
+- [x] Test updating user name
+- [x] Verify name change reflects in profile
 
-### Error Handling
-- [ ] Test profile access without authentication (401)
-- [ ] Test onboarding without required fields (422)
-- [ ] Test onboarding as doctor (400)
-- [ ] Test profile access before onboarding (404)
-- [ ] Test duplicate onboarding (400)
+### Error Handling (IMPLEMENTED)
+- [x] Test profile access without authentication (401)
+- [x] Test onboarding without required fields (422)
+- [x] Test onboarding as doctor (400)
+- [x] Test profile access before onboarding (404)
+- [x] Test duplicate onboarding (400)
 
 ---
 

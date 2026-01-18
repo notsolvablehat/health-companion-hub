@@ -7,3 +7,4 @@ export { default as casesService } from './cases';
 export { default as reportsService } from './reports';
 export { default as assignmentsService } from './assignments';
 export { default as aiService } from './ai';
+export { default as dashboardService } from './dashboard';

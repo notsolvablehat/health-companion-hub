@@ -25,17 +25,10 @@ interface PatientFormValues {
   emergency_contact_relationship: string;
 }
 
-interface DoctorFormValues {
-  first_name: string;
-  last_name: string;
-  specialisation: string;
-  license_number: string;
-  phone: string;
-  max_patients: number;
-}
+
 
 export default function Onboarding() {
-  const { user, isLoading, isOnboarded, onboardPatient, onboardDoctor, refetchUser } = useAuth();
+  const { user, isLoading, isOnboarded, onboardPatient, refetchUser } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -81,41 +74,7 @@ export default function Onboarding() {
     },
   });
 
-  // Doctor form
-  const doctorForm = useForm<DoctorFormValues>({
-    initialValues: {
-      first_name: '',
-      last_name: '',
-      specialisation: '',
-      license_number: '',
-      phone: '',
-      max_patients: 20,
-    },
-    validationRules: {
-      first_name: { required: 'First name is required' },
-      last_name: { required: 'Last name is required' },
-      specialisation: { required: 'Specialization is required' },
-      license_number: { required: 'License number is required' },
-    },
-    onSubmit: async (data) => {
-      setApiError(null);
-      try {
-        await onboardDoctor(data);
-      } catch (error) {
-        if (isApiError(error)) {
-          // If user is already onboarded, refetch and redirect
-          if (error.message.toLowerCase().includes('already onboarded')) {
-            await refetchUser();
-            navigate('/doctor/dashboard');
-            return;
-          }
-          setApiError(error.message);
-        } else {
-          setApiError('An unexpected error occurred. Please try again.');
-        }
-      }
-    },
-  });
+
 
   if (isLoading) {
     return (
@@ -212,6 +171,8 @@ export default function Onboarding() {
                 id="date_of_birth"
                 name="date_of_birth"
                 type="date"
+                min="1900-01-01"
+                max={new Date().toISOString().split('T')[0]}
                 value={patientForm.values.date_of_birth}
                 onChange={patientForm.handleChange}
                 onBlur={patientForm.handleBlur}
@@ -383,147 +344,8 @@ export default function Onboarding() {
     }
   };
 
-  const renderDoctorStep = () => {
-    switch (step) {
-      case 1:
-        return (
-          <div className="space-y-6 animate-fade-in">
-            <div className="text-center mb-8">
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
-                <Stethoscope className="w-8 h-8 text-primary" />
-              </div>
-              <h2 className="text-2xl font-bold text-foreground">Personal Information</h2>
-              <p className="text-muted-foreground mt-1">Tell us about yourself</p>
-            </div>
+  // Doctor onboarding removed - doctors are redirected to dashboard
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                label="First Name"
-                name="first_name"
-                error={doctorForm.errors.first_name}
-                touched={doctorForm.touched.first_name}
-                required
-              >
-                <Input
-                  id="first_name"
-                  name="first_name"
-                  placeholder="John"
-                  value={doctorForm.values.first_name}
-                  onChange={doctorForm.handleChange}
-                  onBlur={doctorForm.handleBlur}
-                  error={doctorForm.touched.first_name && !!doctorForm.errors.first_name}
-                />
-              </FormField>
-
-              <FormField
-                label="Last Name"
-                name="last_name"
-                error={doctorForm.errors.last_name}
-                touched={doctorForm.touched.last_name}
-                required
-              >
-                <Input
-                  id="last_name"
-                  name="last_name"
-                  placeholder="Doe"
-                  value={doctorForm.values.last_name}
-                  onChange={doctorForm.handleChange}
-                  onBlur={doctorForm.handleBlur}
-                  error={doctorForm.touched.last_name && !!doctorForm.errors.last_name}
-                />
-              </FormField>
-            </div>
-
-            <FormField label="Phone" name="phone">
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  placeholder="+1 (555) 000-0000"
-                  value={doctorForm.values.phone}
-                  onChange={doctorForm.handleChange}
-                  className="pl-10"
-                />
-              </div>
-            </FormField>
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className="space-y-6 animate-fade-in">
-            <div className="text-center mb-8">
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
-                <Award className="w-8 h-8 text-primary" />
-              </div>
-              <h2 className="text-2xl font-bold text-foreground">Professional Details</h2>
-              <p className="text-muted-foreground mt-1">Your credentials and specialization</p>
-            </div>
-
-            <div className="space-y-4">
-              <label className="text-sm font-medium text-foreground">
-                Specialization <span className="text-destructive">*</span>
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {SPECIALIZATIONS.map((spec) => (
-                  <button
-                    key={spec}
-                    type="button"
-                    onClick={() => doctorForm.setValue('specialisation', spec)}
-                    className={cn(
-                      'py-3 px-4 rounded-lg border-2 text-sm font-medium transition-all text-left',
-                      doctorForm.values.specialisation === spec
-                        ? 'border-primary bg-primary/5 text-primary'
-                        : 'border-border hover:border-primary/50'
-                    )}
-                  >
-                    {spec}
-                  </button>
-                ))}
-              </div>
-              {doctorForm.touched.specialisation && doctorForm.errors.specialisation && (
-                <p className="text-sm text-destructive">{doctorForm.errors.specialisation}</p>
-              )}
-            </div>
-
-            <FormField
-              label="Medical License Number"
-              name="license_number"
-              error={doctorForm.errors.license_number}
-              touched={doctorForm.touched.license_number}
-              required
-            >
-              <Input
-                id="license_number"
-                name="license_number"
-                placeholder="MD-123456"
-                value={doctorForm.values.license_number}
-                onChange={doctorForm.handleChange}
-                onBlur={doctorForm.handleBlur}
-                error={doctorForm.touched.license_number && !!doctorForm.errors.license_number}
-              />
-            </FormField>
-
-            <FormField label="Maximum Patients" name="max_patients">
-              <Input
-                id="max_patients"
-                name="max_patients"
-                type="number"
-                min={1}
-                max={100}
-                value={doctorForm.values.max_patients}
-                onChange={doctorForm.handleChange}
-              />
-            </FormField>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">

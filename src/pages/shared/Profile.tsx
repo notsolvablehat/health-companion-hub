@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getInitials, formatDate, calculateAge } from '@/lib/utils';
 import {
   User,
@@ -18,8 +20,10 @@ import {
   Stethoscope,
   Award,
   Users,
+  Info,
 } from 'lucide-react';
 import type { PatientProfile, DoctorProfile } from '@/types/auth';
+import { EditProfileDialog } from '@/components/profile/EditProfileDialog';
 
 function PatientProfileView({ profile }: { profile: PatientProfile }) {
   return (
@@ -33,7 +37,7 @@ function PatientProfileView({ profile }: { profile: PatientProfile }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {profile.medical_history.length > 0 ? (
+          {profile.medical_history && profile.medical_history.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {profile.medical_history.map((condition, index) => (
                 <Badge key={index} variant="secondary">
@@ -56,7 +60,7 @@ function PatientProfileView({ profile }: { profile: PatientProfile }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {profile.allergies.length > 0 ? (
+          {profile.allergies && profile.allergies.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {profile.allergies.map((allergy, index) => (
                 <Badge key={index} variant="destructive" className="bg-warning/10 text-warning border-warning/20">
@@ -71,7 +75,7 @@ function PatientProfileView({ profile }: { profile: PatientProfile }) {
       </Card>
 
       {/* Emergency Contact */}
-      {profile.emergency_contact && (
+      {profile.emergency_contact_name && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -82,14 +86,11 @@ function PatientProfileView({ profile }: { profile: PatientProfile }) {
           <CardContent className="space-y-2">
             <div className="flex items-center gap-2 text-sm">
               <User className="w-4 h-4 text-muted-foreground" />
-              <span>{profile.emergency_contact.name}</span>
-              <Badge variant="outline" className="text-xs">
-                {profile.emergency_contact.relationship}
-              </Badge>
+              <span>{profile.emergency_contact_name}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Phone className="w-4 h-4" />
-              <span>{profile.emergency_contact.phone}</span>
+              <span>{profile.emergency_contact_phone}</span>
             </div>
           </CardContent>
         </Card>
@@ -101,6 +102,14 @@ function PatientProfileView({ profile }: { profile: PatientProfile }) {
 function DoctorProfileView({ profile }: { profile: DoctorProfile }) {
   return (
     <div className="space-y-6">
+      {/* Admin Contact Warning */}
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          To update your profile information, please contact the system administrator.
+        </AlertDescription>
+      </Alert>
+
       {/* Professional Info */}
       <Card>
         <CardHeader>
@@ -117,7 +126,7 @@ function DoctorProfileView({ profile }: { profile: DoctorProfile }) {
           <Separator />
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">License Number</span>
-            <span className="font-mono text-sm">{profile.license_number}</span>
+            <span className="font-mono text-sm">{profile.license}</span>
           </div>
         </CardContent>
       </Card>
@@ -133,21 +142,23 @@ function DoctorProfileView({ profile }: { profile: DoctorProfile }) {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Current Patients</span>
-            <span className="font-semibold">{profile.current_patient_count || 0}</span>
+            <span className="font-semibold">{(profile as any).current_patient_count || 0}</span>
           </div>
           <Separator />
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Maximum Capacity</span>
-            <span className="font-semibold">{profile.max_patients}</span>
+            <span className="font-semibold">{(profile as any).max_patients || 'N/A'}</span>
           </div>
-          <div className="w-full bg-muted rounded-full h-2">
-            <div
-              className="bg-success h-2 rounded-full transition-all"
-              style={{
-                width: `${Math.min(((profile.current_patient_count || 0) / profile.max_patients) * 100, 100)}%`,
-              }}
-            />
-          </div>
+          {(profile as any).max_patients && (
+            <div className="w-full bg-muted rounded-full h-2">
+              <div
+                className="bg-success h-2 rounded-full transition-all"
+                style={{
+                  width: `${Math.min((((profile as any).current_patient_count || 0) / (profile as any).max_patients) * 100, 100)}%`,
+                }}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -156,6 +167,7 @@ function DoctorProfileView({ profile }: { profile: DoctorProfile }) {
 
 export default function Profile() {
   const { user, profile } = useAuth();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   if (!user || !profile) {
     return (
@@ -169,13 +181,8 @@ export default function Profile() {
   const patientProfile = isPatient ? (profile as PatientProfile) : null;
   const doctorProfile = !isPatient ? (profile as DoctorProfile) : null;
 
-  const name = 'first_name' in profile
-    ? `${profile.first_name} ${profile.last_name}`
-    : user.email;
-
-  const initials = 'first_name' in profile
-    ? getInitials(profile.first_name, profile.last_name)
-    : '?';
+  const name = profile.name || user.email;
+  const initials = profile.name ? getInitials(profile.name.split(' ')[0], profile.name.split(' ')[1] || '') : '?';
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -203,35 +210,38 @@ export default function Profile() {
                   <span>{user.email}</span>
                 </div>
 
-                {'phone' in profile && profile.phone && (
+                {patientProfile?.medical_info?.phone_number && (
                   <div className="flex items-center justify-center sm:justify-start gap-2">
                     <Phone className="w-4 h-4" />
-                    <span>{profile.phone}</span>
+                    <span>{patientProfile.medical_info.phone_number}</span>
                   </div>
                 )}
 
-                {patientProfile?.date_of_birth && (
+                {patientProfile?.medical_info?.date_of_birth && (
                   <div className="flex items-center justify-center sm:justify-start gap-2">
                     <Calendar className="w-4 h-4" />
                     <span>
-                      {formatDate(patientProfile.date_of_birth)} ({calculateAge(patientProfile.date_of_birth)} years old)
+                      {formatDate(patientProfile.medical_info.date_of_birth)} ({calculateAge(patientProfile.medical_info.date_of_birth)} years old)
                     </span>
                   </div>
                 )}
 
-                {patientProfile?.address && (
+                {patientProfile?.medical_info?.address && (
                   <div className="flex items-center justify-center sm:justify-start gap-2">
                     <MapPin className="w-4 h-4" />
-                    <span>{patientProfile.address}</span>
+                    <span>{patientProfile.medical_info.address}</span>
                   </div>
                 )}
               </div>
             </div>
 
-            <Button variant="outline" size="sm">
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
+            {/* Edit Button - Only for Patients */}
+            {isPatient && (
+              <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -262,6 +272,15 @@ export default function Profile() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Profile Dialog - Only for Patients */}
+      {isPatient && patientProfile && (
+        <EditProfileDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          profile={patientProfile}
+        />
+      )}
     </div>
   );
 }

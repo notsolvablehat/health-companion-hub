@@ -8,32 +8,55 @@ export interface User {
   created_at: string;
 }
 
+
 export interface PatientProfile {
+  // User info
+  name?: string;
+  email?: string;
+  role?: 'patient';
+  is_onboarded?: boolean;
+  created_at?: string;
+  
+  // IDs
+  patient_id: string;
   user_id: string;
-  first_name: string;
-  last_name: string;
+  
+  // Demographics
   date_of_birth: string;
-  gender: 'male' | 'female' | 'other';
-  phone?: string;
-  address?: string;
-  medical_history: string[];
+  gender: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
+  phone_number: string;
+  address: string;
+  
+  // Vitals
+  blood_group?: 'A+' | 'A-' | 'B+' | 'B-' | 'O+' | 'O-' | 'AB+' | 'AB-';
+  height_cm?: number;
+  weight_kg?: number;
+  
+  // Medical
   allergies: string[];
-  emergency_contact?: {
-    name: string;
-    phone: string;
-    relationship: string;
-  };
+  current_medications: string[];
+  medical_history: string[];
+  
+  // Emergency
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  
+  // Legal
+  consent_hipaa: boolean;
 }
 
 export interface DoctorProfile {
-  user_id: string;
-  first_name: string;
-  last_name: string;
+  name: string;
+  email: string;
+  role: 'doctor';
+  is_onboarded: boolean;
+  created_at: string;
+  doctor_id: string;
+  license: string;
   specialisation: string;
-  license_number: string;
-  phone?: string;
-  max_patients: number;
-  current_patient_count?: number;
+  date_of_birth?: string;
+  gender?: string;
+  medical_info?: any;
 }
 
 export type UserProfile = PatientProfile | DoctorProfile;
@@ -68,24 +91,4 @@ export interface OnboardPatientRequest {
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
   emergency_contact_relationship?: string;
-}
-
-export interface OnboardDoctorRequest {
-  first_name: string;
-  last_name: string;
-  specialisation: string;
-  license_number: string;
-  phone?: string;
-  max_patients?: number;
-}
-
-export interface UpdateProfileRequest {
-  first_name?: string;
-  last_name?: string;
-  phone?: string;
-  address?: string;
-  medical_history?: string[];
-  allergies?: string[];
-  specialisation?: string;
-  max_patients?: number;
 }

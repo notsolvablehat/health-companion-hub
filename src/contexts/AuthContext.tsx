@@ -15,7 +15,7 @@ import type {
   LoginRequest,
   RegisterRequest,
   OnboardPatientRequest,
-  OnboardDoctorRequest,
+
 } from '@/types/auth';
 
 interface AuthContextValue {
@@ -29,7 +29,7 @@ interface AuthContextValue {
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   onboardPatient: (data: OnboardPatientRequest) => Promise<void>;
-  onboardDoctor: (data: OnboardDoctorRequest) => Promise<void>;
+
   refetchUser: () => Promise<void>;
 }
 
@@ -103,14 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const onboardDoctorMutation = useMutation({
-    mutationFn: authService.onboardDoctor,
-    onSuccess: async () => {
-      // Refetch user data to get updated is_onboarded status
-      await refetchUser();
-      navigate('/doctor/dashboard');
-    },
-  });
+
 
   const logout = useCallback(() => {
     authService.logout();
@@ -136,9 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       onboardPatient: async (data) => {
         await onboardPatientMutation.mutateAsync(data);
       },
-      onboardDoctor: async (data) => {
-        await onboardDoctorMutation.mutateAsync(data);
-      },
+
       refetchUser: async () => {
         await refetchUser();
       },
@@ -152,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       registerMutation,
       logout,
       onboardPatientMutation,
-      onboardDoctorMutation,
+
       refetchUser,
     ]
   );

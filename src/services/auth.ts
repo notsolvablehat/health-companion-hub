@@ -7,8 +7,8 @@ import type {
   User,
   UserProfile,
   OnboardPatientRequest,
-  OnboardDoctorRequest,
-  UpdateProfileRequest,
+
+
 } from '@/types/auth';
 
 // Helper to send OAuth2 form data
@@ -139,38 +139,9 @@ export const authService = {
     return response.data;
   },
 
-  onboardDoctor: async (data: OnboardDoctorRequest): Promise<UserProfile> => {
-    // Transform data to match backend expectations
-    // Backend requires same fields for both patient and doctor
-    const payload = {
-      role: 'doctor',
-      first_name: data.first_name,
-      last_name: data.last_name,
-      specialisation: data.specialisation,
-      license_number: data.license_number,
-      // Rename phone to phone_number
-      phone_number: data.phone || '',
-      max_patients: data.max_patients || 20,
-      // Required fields that doctors don't typically fill but backend expects
-      date_of_birth: '1980-01-01', // Default date
-      gender: 'Other', // Default gender
-      address: '',
-      emergency_contact_name: '',
-      emergency_contact_phone: '',
-      emergency_contact_relationship: '',
-      consent_hipaa: true,
-      medical_history: [],
-      allergies: [],
-    };
-    
-    const response = await api.post<UserProfile>('/users/onboard', payload);
-    return response.data;
-  },
 
-  updateProfile: async (data: UpdateProfileRequest): Promise<UserProfile> => {
-    const response = await api.post<UserProfile>('/users/update-profile', data);
-    return response.data;
-  },
+
+
 
   logout: (): void => {
     tokenManager.clear();

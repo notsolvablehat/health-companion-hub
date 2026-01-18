@@ -26,7 +26,8 @@ export function ProtectedRoute({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requireOnboarded && !isOnboarded) {
+  // Only check onboarding for patients (doctors don't have onboarding)
+  if (requireOnboarded && !isOnboarded && user?.role === 'patient') {
     return <Navigate to="/onboarding" replace />;
   }
 

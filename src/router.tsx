@@ -1,15 +1,15 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
+
+// Layouts
+import RootLayout from '@/components/layout/RootLayout';
+import PatientLayout from '@/components/layout/PatientLayout';
+import DoctorLayout from '@/components/layout/DoctorLayout';
 
 // Auth Pages
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
 import Onboarding from '@/pages/auth/Onboarding';
-
-// Layouts
-import PatientLayout from '@/components/layout/PatientLayout';
-import DoctorLayout from '@/components/layout/DoctorLayout';
 
 // Patient Pages
 import PatientDashboard from '@/pages/patient/Dashboard';
@@ -33,160 +33,148 @@ import Settings from '@/pages/shared/Settings';
 import NotFound from '@/pages/NotFound';
 import Index from '@/pages/Index';
 
-// Auth wrapper component to provide AuthContext inside router
-function AuthWrapper({ children }: { children: React.ReactNode }) {
-  return <AuthProvider>{children}</AuthProvider>;
-}
-
 export const router = createBrowserRouter([
-  // Public Routes
   {
-    path: '/',
-    element: <AuthWrapper><Index /></AuthWrapper>,
-  },
-  {
-    path: '/login',
-    element: <AuthWrapper><Login /></AuthWrapper>,
-  },
-  {
-    path: '/register',
-    element: <AuthWrapper><Register /></AuthWrapper>,
-  },
-  
-  // Onboarding (authenticated but not onboarded)
-  {
-    path: '/onboarding',
-    element: (
-      <AuthWrapper>
-        <ProtectedRoute requireOnboarded={false} />
-      </AuthWrapper>
-    ),
+    element: <RootLayout />,
     children: [
+      // Public Routes
       {
-        index: true,
-        element: <Onboarding />,
+        path: '/',
+        element: <Index />,
       },
-    ],
-  },
-  
-  // Patient Routes
-  {
-    element: (
-      <AuthWrapper>
-        <ProtectedRoute allowedRoles={['patient']} />
-      </AuthWrapper>
-    ),
-    children: [
       {
-        element: <PatientLayout />,
+        path: '/login',
+        element: <Login />,
+      },
+      {
+        path: '/register',
+        element: <Register />,
+      },
+      
+      // Onboarding (authenticated but not onboarded)
+      {
+        path: '/onboarding',
+        element: <ProtectedRoute requireOnboarded={false} />,
         children: [
           {
-            path: '/patient/dashboard',
-            element: <PatientDashboard />,
-          },
-          {
-            path: '/patient/cases',
-            element: <PatientCases />,
-          },
-          {
-            path: '/patient/cases/:caseId',
-            element: <PatientCaseDetail />,
-          },
-          {
-            path: '/patient/reports',
-            element: <PatientReports />,
-          },
-          {
-            path: '/patient/doctors',
-            element: <PatientDoctors />,
-          },
-          {
-            path: '/patient/chat',
-            element: <PatientChat />,
-          },
-          {
-            path: '/patient/chat/:chatId',
-            element: <PatientChat />,
-          },
-          {
-            path: '/patient/profile',
-            element: <Profile />,
-          },
-          {
-            path: '/patient/settings',
-            element: <Settings />,
+            index: true,
+            element: <Onboarding />,
           },
         ],
       },
-    ],
-  },
-  
-  // Doctor Routes
-  {
-    element: (
-      <AuthWrapper>
-        <ProtectedRoute allowedRoles={['doctor']} />
-      </AuthWrapper>
-    ),
-    children: [
+      
+      // Patient Routes
       {
-        element: <DoctorLayout />,
+        element: <ProtectedRoute allowedRoles={['patient']} />,
         children: [
           {
-            path: '/doctor/dashboard',
-            element: <DoctorDashboard />,
-          },
-          {
-            path: '/doctor/patients',
-            element: <DoctorPatients />,
-          },
-          {
-            path: '/doctor/patients/:patientId',
-            element: <DoctorPatientDetail />,
-          },
-          {
-            path: '/doctor/cases',
-            element: <DoctorCases />,
-          },
-          {
-            path: '/doctor/cases/:caseId',
-            element: <DoctorCaseReview />,
-          },
-          {
-            path: '/doctor/chat',
-            element: <DoctorChat />,
-          },
-          {
-            path: '/doctor/chat/:chatId',
-            element: <DoctorChat />,
-          },
-          {
-            path: '/doctor/profile',
-            element: <Profile />,
-          },
-          {
-            path: '/doctor/settings',
-            element: <Settings />,
+            element: <PatientLayout />,
+            children: [
+              {
+                path: '/patient/dashboard',
+                element: <PatientDashboard />,
+              },
+              {
+                path: '/patient/cases',
+                element: <PatientCases />,
+              },
+              {
+                path: '/patient/cases/:caseId',
+                element: <PatientCaseDetail />,
+              },
+              {
+                path: '/patient/reports',
+                element: <PatientReports />,
+              },
+              {
+                path: '/patient/doctors',
+                element: <PatientDoctors />,
+              },
+              {
+                path: '/patient/chat',
+                element: <PatientChat />,
+              },
+              {
+                path: '/patient/chat/:chatId',
+                element: <PatientChat />,
+              },
+              {
+                path: '/patient/profile',
+                element: <Profile />,
+              },
+              {
+                path: '/patient/settings',
+                element: <Settings />,
+              },
+            ],
           },
         ],
       },
+      
+      // Doctor Routes
+      {
+        element: <ProtectedRoute allowedRoles={['doctor']} />,
+        children: [
+          {
+            element: <DoctorLayout />,
+            children: [
+              {
+                path: '/doctor/dashboard',
+                element: <DoctorDashboard />,
+              },
+              {
+                path: '/doctor/patients',
+                element: <DoctorPatients />,
+              },
+              {
+                path: '/doctor/patients/:patientId',
+                element: <DoctorPatientDetail />,
+              },
+              {
+                path: '/doctor/cases',
+                element: <DoctorCases />,
+              },
+              {
+                path: '/doctor/cases/:caseId',
+                element: <DoctorCaseReview />,
+              },
+              {
+                path: '/doctor/chat',
+                element: <DoctorChat />,
+              },
+              {
+                path: '/doctor/chat/:chatId',
+                element: <DoctorChat />,
+              },
+              {
+                path: '/doctor/profile',
+                element: <Profile />,
+              },
+              {
+                path: '/doctor/settings',
+                element: <Settings />,
+              },
+            ],
+          },
+        ],
+      },
+      
+      // Shared Routes Redirects
+      {
+        path: '/profile',
+        element: <Navigate to="/patient/profile" replace />,
+      },
+      {
+        path: '/settings',
+        element: <Navigate to="/patient/settings" replace />,
+      },
+      
+      // 404
+      {
+        path: '*',
+        element: <NotFound />,
+      },
     ],
-  },
-  
-  // Shared Routes Redirects
-  {
-    path: '/profile',
-    element: <Navigate to="/patient/profile" replace />,
-  },
-  {
-    path: '/settings',
-    element: <Navigate to="/patient/settings" replace />,
-  },
-  
-  // 404
-  {
-    path: '*',
-    element: <NotFound />,
   },
 ]);
 

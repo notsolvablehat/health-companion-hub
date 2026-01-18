@@ -48,6 +48,12 @@ interface SidebarProps {
 export function Sidebar({ role, isCollapsed = false }: SidebarProps) {
   const location = useLocation();
   const navItems = role === 'doctor' ? doctorNavItems : patientNavItems;
+  
+  // Make bottom nav items role-aware
+  const roleAwareBottomNavItems = bottomNavItems.map(item => ({
+    ...item,
+    href: `/${role}${item.href}`
+  }));
 
   const isActive = (href: string) => {
     if (href === location.pathname) return true;
@@ -101,7 +107,7 @@ export function Sidebar({ role, isCollapsed = false }: SidebarProps) {
 
       {/* Bottom Navigation */}
       <div className="px-3 py-4 border-t border-sidebar-border space-y-1">
-        {bottomNavItems.map((item) => {
+        {roleAwareBottomNavItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
           

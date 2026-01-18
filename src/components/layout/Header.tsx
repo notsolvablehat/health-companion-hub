@@ -120,13 +120,13 @@ export function Header({ onMenuClick }: HeaderProps) {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/profile" className="flex items-center gap-2 cursor-pointer">
+                <Link to={`/${user?.role}/profile`} className="flex items-center gap-2 cursor-pointer">
                   <User className="w-4 h-4" />
                   Profile
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/settings" className="flex items-center gap-2 cursor-pointer">
+                <Link to={`/${user?.role}/settings`} className="flex items-center gap-2 cursor-pointer">
                   <Settings className="w-4 h-4" />
                   Settings
                 </Link>

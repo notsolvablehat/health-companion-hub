@@ -11,21 +11,25 @@ import type {
 
 export const casesService = {
   /**
-   * Get all cases for current user
-   * - Patient: their own cases
-   * - Doctor: cases from assigned patients
+   * Get all cases for current user (patient)
+   * Backend endpoint: GET /cases/patient/:patient_id/list
    */
-  getCases: async (params?: {
-    status?: string;
-    page?: number;
-    per_page?: number;
-  }): Promise<CaseListResponse> => {
-    const response = await api.get<CaseListResponse>('/cases', { params });
+  getCases: async (
+    userId: string,
+    params?: {
+      status?: string;
+    }
+  ): Promise<CaseListResponse> => {
+    const response = await api.get<CaseListResponse>(
+      `/cases/patient/${userId}/list`,
+      { params }
+    );
     return response.data;
   },
 
   /**
-   * Get single case details (merged SQL + MongoDB data)
+   * Get single case details
+   * Backend endpoint: GET /cases/:case_id
    */
   getCaseById: async (caseId: string): Promise<CaseDetail> => {
     const response = await api.get<CaseDetail>(`/cases/${caseId}`);
@@ -48,19 +52,6 @@ export const casesService = {
     data: UpdateCaseStatusRequest
   ): Promise<CaseDetail> => {
     const response = await api.patch<CaseDetail>(`/cases/${caseId}/status`, data);
-    return response.data;
-  },
-
-  /**
-   * Get cases for a specific patient (Doctor only)
-   */
-  getPatientCases: async (
-    patientId: string,
-    params?: { status?: string }
-  ): Promise<CaseListResponse> => {
-    const response = await api.get<CaseListResponse>(`/cases/patient/${patientId}`, {
-      params,
-    });
     return response.data;
   },
 };

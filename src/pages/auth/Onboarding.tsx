@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { ChevronRight, ChevronLeft, Check, User, Calendar, Phone, MapPin, AlertCircle, Stethoscope, Award } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useForm } from '@/hooks/useForm';
@@ -35,7 +35,8 @@ interface DoctorFormValues {
 }
 
 export default function Onboarding() {
-  const { user, isLoading, isOnboarded, onboardPatient, onboardDoctor } = useAuth();
+  const { user, isLoading, isOnboarded, onboardPatient, onboardDoctor, refetchUser } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -66,6 +67,12 @@ export default function Onboarding() {
         await onboardPatient(data);
       } catch (error) {
         if (isApiError(error)) {
+          // If user is already onboarded, refetch and redirect
+          if (error.message.toLowerCase().includes('already onboarded')) {
+            await refetchUser();
+            navigate('/patient/dashboard');
+            return;
+          }
           setApiError(error.message);
         } else {
           setApiError('An unexpected error occurred. Please try again.');
@@ -96,6 +103,12 @@ export default function Onboarding() {
         await onboardDoctor(data);
       } catch (error) {
         if (isApiError(error)) {
+          // If user is already onboarded, refetch and redirect
+          if (error.message.toLowerCase().includes('already onboarded')) {
+            await refetchUser();
+            navigate('/doctor/dashboard');
+            return;
+          }
           setApiError(error.message);
         } else {
           setApiError('An unexpected error occurred. Please try again.');
@@ -116,13 +129,18 @@ export default function Onboarding() {
     return <Navigate to="/login" replace />;
   }
 
-  if (isOnboarded) {
-    return <Navigate to={user.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard'} replace />;
+  // Doctors don't have onboarding - redirect to dashboard
+  if (user.role === 'doctor') {
+    return <Navigate to="/doctor/dashboard" replace />;
   }
 
-  const isDoctor = user.role === 'doctor';
-  const totalSteps = isDoctor ? 2 : 3;
-  const form = isDoctor ? doctorForm : patientForm;
+  if (isOnboarded) {
+    return <Navigate to="/patient/dashboard" replace />;
+  }
+
+  // At this point, user is a patient who needs onboarding
+  const totalSteps = 3;
+  const form = patientForm;
 
   const toggleArrayItem = (field: 'medical_history' | 'allergies', item: string) => {
     const currentArray = patientForm.values[field];
@@ -546,7 +564,7 @@ export default function Onboarding() {
           )}
 
           <form onSubmit={form.handleSubmit}>
-            {isDoctor ? renderDoctorStep() : renderPatientStep()}
+            {renderPatientStep()}
 
             {/* Navigation */}
             <div className="flex gap-4 mt-8">

@@ -54,7 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: profile, isLoading: isProfileLoading } = useQuery({
     queryKey: ['userProfile'],
     queryFn: authService.getProfile,
-    enabled: !!user?.is_onboarded,
+    // Enable for doctors always, for patients only if onboarded
+    enabled: !!user && (user.role === 'doctor' || user.is_onboarded),
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
@@ -64,8 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: async (data) => {
       queryClient.setQueryData(['currentUser'], data.user);
       
-      if (data.user.is_onboarded) {
-        navigate(data.user.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard');
+      // Doctors don't have onboarding - always go to dashboard
+      if (data.user.role === 'doctor') {
+        navigate('/doctor/dashboard');
+      } else if (data.user.is_onboarded) {
+        navigate('/patient/dashboard');
       } else {
         navigate('/onboarding');
       }
@@ -76,24 +80,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: authService.register,
     onSuccess: (data) => {
       queryClient.setQueryData(['currentUser'], data.user);
-      navigate('/onboarding');
+      
+      // Doctors don't have onboarding - go directly to dashboard
+      if (data.user.role === 'doctor') {
+        navigate('/doctor/dashboard');
+      } else if (data.user.is_onboarded) {
+        // Patient already onboarded
+        navigate('/patient/dashboard');
+      } else {
+        // Patient needs onboarding
+        navigate('/onboarding');
+      }
     },
   });
 
   const onboardPatientMutation = useMutation({
     mutationFn: authService.onboardPatient,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+    onSuccess: async () => {
+      // Refetch user data to get updated is_onboarded status
+      await refetchUser();
       navigate('/patient/dashboard');
     },
   });
 
   const onboardDoctorMutation = useMutation({
     mutationFn: authService.onboardDoctor,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+    onSuccess: async () => {
+      // Refetch user data to get updated is_onboarded status
+      await refetchUser();
       navigate('/doctor/dashboard');
     },
   });

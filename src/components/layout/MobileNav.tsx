@@ -31,7 +31,7 @@ const doctorNavItems: NavItem[] = [
   { label: 'Patients', href: '/doctor/patients', icon: Users },
   { label: 'Cases', href: '/doctor/cases', icon: ClipboardList },
   { label: 'Chat', href: '/doctor/chat', icon: MessageSquare },
-  { label: 'Settings', href: '/settings', icon: Settings },
+  { label: 'Settings', href: '/doctor/settings', icon: Settings },
 ];
 
 interface MobileNavProps {

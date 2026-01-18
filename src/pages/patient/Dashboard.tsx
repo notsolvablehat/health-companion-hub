@@ -17,28 +17,6 @@ export default function PatientDashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-primary">
-              <Heart className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-semibold text-foreground">HealthCare</span>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium text-foreground">
-                {patientProfile ? `${patientProfile.first_name} ${patientProfile.last_name}` : user?.email}
-              </p>
-              <p className="text-xs text-muted-foreground">Patient</p>
-            </div>
-            <Button variant="ghost" size="icon" onClick={logout}>
-              <LogOut className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-      </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">

@@ -1,8 +1,21 @@
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Heart, ArrowRight, Shield, Activity, Users, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Index() {
+  const { user, isLoading, isOnboarded } = useAuth();
+
+  // Redirect logged-in users to their dashboard
+  if (!isLoading && user && isOnboarded) {
+    return <Navigate to={user.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard'} replace />;
+  }
+
+  // Redirect to onboarding if logged in but not onboarded
+  if (!isLoading && user && !isOnboarded) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
   const features = [
     {
       icon: Activity,

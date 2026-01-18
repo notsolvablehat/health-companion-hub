@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useForm } from '@/hooks/useForm';
@@ -16,9 +16,20 @@ interface LoginFormValues {
 }
 
 export default function Login() {
-  const { login } = useAuth();
+  const { user, isLoading, isOnboarded, login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  // Redirect logged-in users to their dashboard
+  if (!isLoading && user && isOnboarded) {
+    return <Navigate to={user.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard'} replace />;
+  }
+
+  // Redirect to onboarding if logged in but not onboarded
+  if (!isLoading && user && !isOnboarded) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
 
   const {
     values,

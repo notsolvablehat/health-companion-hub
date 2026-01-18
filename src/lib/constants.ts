@@ -1,4 +1,4 @@
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://your-backend.onrender.com';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 export const TOKEN_KEY = 'auth_token';
 export const TOKEN_EXPIRY_KEY = 'auth_token_expiry';

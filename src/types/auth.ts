@@ -12,6 +12,8 @@ export interface User {
 export interface PatientProfile {
   // User info
   name?: string;
+  first_name?: string;
+  last_name?: string;
   email?: string;
   role?: 'patient';
   is_onboarded?: boolean;
@@ -47,6 +49,8 @@ export interface PatientProfile {
 
 export interface DoctorProfile {
   name: string;
+  first_name?: string;
+  last_name?: string;
   email: string;
   role: 'doctor';
   is_onboarded: boolean;

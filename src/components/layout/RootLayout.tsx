@@ -1,5 +1,8 @@
 import { Outlet } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
+import { Toaster } from '@/components/ui/toaster';
 
 /**
  * Root layout component that provides AuthContext to all routes.
@@ -8,7 +11,12 @@ import { AuthProvider } from '@/contexts/AuthContext';
 export function RootLayout() {
   return (
     <AuthProvider>
-      <Outlet />
+      <ThemeProvider>
+        <NotificationProvider>
+          <Outlet />
+          <Toaster />
+        </NotificationProvider>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

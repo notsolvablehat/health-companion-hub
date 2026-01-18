@@ -27,6 +27,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { parseBackendDate } from '@/lib/utils';
 
 export default function DoctorDashboard() {
   const { user } = useAuth();
@@ -59,7 +60,8 @@ export default function DoctorDashboard() {
         return <Clock className="w-3 h-3" />;
       case 'under_review':
         return <Activity className="w-3 h-3" />;
-      case 'approved':
+      case 'approved_by_doctor':
+      case 'approved': // Fallback
         return <CheckCircle className="w-3 h-3" />;
       default:
         return <FileText className="w-3 h-3" />;
@@ -72,7 +74,8 @@ export default function DoctorDashboard() {
         return 'bg-warning/10 text-warning border-warning/20';
       case 'under_review':
         return 'bg-info/10 text-info border-info/20';
-      case 'approved':
+      case 'approved_by_doctor':
+      case 'approved': // Fallback
         return 'bg-success/10 text-success border-success/20';
       case 'closed':
         return 'bg-muted text-muted-foreground';
@@ -300,7 +303,7 @@ export default function DoctorDashboard() {
                         {approval.chief_complaint || 'No complaint specified'}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(approval.created_at), { addSuffix: true })}
+                        {parseBackendDate(approval.created_at) ? formatDistanceToNow(parseBackendDate(approval.created_at)!, { addSuffix: true }) : 'Unknown'}
                       </p>
                     </div>
                     <Button size="sm" variant="outline" className="ml-2">
@@ -347,7 +350,7 @@ export default function DoctorDashboard() {
                         {caseItem.chief_complaint || 'Untitled Case'}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(caseItem.created_at), { addSuffix: true })}
+                        {parseBackendDate(caseItem.created_at) ? formatDistanceToNow(parseBackendDate(caseItem.created_at)!, { addSuffix: true }) : 'Unknown'}
                       </p>
                     </div>
                     <Badge

@@ -11,27 +11,20 @@ import {
   Stethoscope,
   Pill,
   AlertCircle,
-  Heart,
-  Thermometer,
-  Droplet,
   TrendingUp,
   ClipboardList,
   Users
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { casesService } from '@/services';
+import { useCase } from '@/hooks/queries';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { formatDistanceToNow, format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { parseBackendDate } from '@/lib/utils';
 
 export default function PatientCaseDetail() {
   const { caseId } = useParams<{ caseId: string }>();
 
-  const { data: caseData, isLoading, error } = useQuery({
-    queryKey: ['case', caseId],
-    queryFn: () => casesService.getCaseById(caseId!),
-    enabled: !!caseId,
-  });
+  const { data: caseData, isLoading, error } = useCase(caseId);
 
   if (isLoading) {
     return (
@@ -67,12 +60,20 @@ export default function PatientCaseDetail() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'open': return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
-      case 'in_review': return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20';
-      case 'approved': return 'bg-green-500/10 text-green-600 border-green-500/20';
-      case 'rejected': return 'bg-red-500/10 text-red-600 border-red-500/20';
+      case 'under_review': return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20';
+      case 'approved_by_doctor': return 'bg-green-500/10 text-green-600 border-green-500/20';
       case 'closed': return 'bg-gray-500/10 text-gray-600 border-gray-500/20';
       default: return 'bg-gray-500/10 text-gray-600 border-gray-500/20';
     }
+  };
+
+  const formatStatus = (status: string) => status.replace(/_/g, ' ').toUpperCase();
+
+  const safeRender = (value: any) => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string' || typeof value === 'number') return value;
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    return JSON.stringify(value);
   };
 
   return (
@@ -89,7 +90,7 @@ export default function PatientCaseDetail() {
           <p className="text-muted-foreground">Case ID: {caseData.case_id}</p>
         </div>
         <Badge className={`${getStatusColor(caseData.status)} border`}>
-          {caseData.status.replace('_', ' ').toUpperCase()}
+          {formatStatus(caseData.status)}
         </Badge>
       </div>
 
@@ -108,10 +109,10 @@ export default function PatientCaseDetail() {
               <div>
                 <p className="text-sm font-medium">Created</p>
                 <p className="text-sm text-muted-foreground">
-                  {format(new Date(caseData.created_at), 'MMM dd, yyyy')}
+                  {parseBackendDate(caseData.created_at) ? format(parseBackendDate(caseData.created_at)!, 'MMM dd, yyyy') : 'N/A'}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(caseData.created_at), { addSuffix: true })}
+                   {parseBackendDate(caseData.created_at) ? formatDistanceToNow(parseBackendDate(caseData.created_at)!, { addSuffix: true }) : ''}
                 </p>
               </div>
             </div>
@@ -119,18 +120,9 @@ export default function PatientCaseDetail() {
               <User className="w-5 h-5 text-muted-foreground mt-0.5" />
               <div>
                 <p className="text-sm font-medium">Case Type</p>
-                <p className="text-sm text-muted-foreground capitalize">{caseData.case_type || 'Routine'}</p>
+                <p className="text-sm text-muted-foreground capitalize">{caseData.case_type || 'General'}</p>
               </div>
             </div>
-            {caseData.severity && (
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium">Severity</p>
-                  <p className="text-sm text-muted-foreground capitalize">{caseData.severity}</p>
-                </div>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -144,377 +136,465 @@ export default function PatientCaseDetail() {
           <TabsTrigger value="plan">Plan</TabsTrigger>
         </TabsList>
 
-        {/* Subjective Tab */}
         <TabsContent value="subjective" className="space-y-4">
-          {/* Chief Complaint */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileText className="w-4 h-4" />
-                Chief Complaint
+                History & Symptoms
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-foreground">{caseData.subjective?.chief_complaint || 'Not provided'}</p>
+            <CardContent className="space-y-4">
+                <div>
+                    <h4 className="font-semibold text-sm mb-1">Chief Complaint</h4>
+                    <p className="text-muted-foreground">{safeRender(caseData.subjective?.chief_complaint)}</p>
+                </div>
+                {caseData.subjective?.history_of_present_illness && (
+                    <div>
+                        <h4 className="font-semibold text-sm mb-1">History of Present Illness</h4>
+                        {typeof caseData.subjective.history_of_present_illness === 'string' ? (
+                            <p className="text-muted-foreground">{caseData.subjective.history_of_present_illness}</p>
+                        ) : (
+                            <div className="space-y-3 bg-muted/30 p-3 rounded-md border">
+                                {(caseData.subjective.history_of_present_illness as any).narrative && (
+                                    <p className="text-sm text-muted-foreground">{(caseData.subjective.history_of_present_illness as any).narrative}</p>
+                                )}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {(caseData.subjective.history_of_present_illness as any).onset && (
+                                        <div>
+                                            <p className="text-xs font-semibold">Onset:</p>
+                                            <p className="text-sm text-muted-foreground">{safeRender((caseData.subjective.history_of_present_illness as any).onset)}</p>
+                                        </div>
+                                    )}
+                                    {(caseData.subjective.history_of_present_illness as any).duration && (
+                                        <div>
+                                            <p className="text-xs font-semibold">Duration:</p>
+                                            <p className="text-sm text-muted-foreground">{safeRender((caseData.subjective.history_of_present_illness as any).duration)}</p>
+                                        </div>
+                                    )}
+                                    {(caseData.subjective.history_of_present_illness as any).severity && (
+                                        <div>
+                                            <p className="text-xs font-semibold">Severity:</p>
+                                            {typeof (caseData.subjective.history_of_present_illness as any).severity === 'object' ? (
+                                                <div className="text-sm text-muted-foreground">
+                                                    {(caseData.subjective.history_of_present_illness as any).severity.description && (
+                                                        <span className="capitalize">{(caseData.subjective.history_of_present_illness as any).severity.description}</span>
+                                                    )}
+                                                    {(caseData.subjective.history_of_present_illness as any).severity.scale && (
+                                                        <span className="ml-2">({(caseData.subjective.history_of_present_illness as any).severity.scale}/10)</span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <p className="text-sm text-muted-foreground">{safeRender((caseData.subjective.history_of_present_illness as any).severity)}</p>
+                                            )}
+                                        </div>
+                                    )}
+                                    {(caseData.subjective.history_of_present_illness as any).character && (
+                                        <div>
+                                            <p className="text-xs font-semibold">Character:</p>
+                                            <p className="text-sm text-muted-foreground">{(caseData.subjective.history_of_present_illness as any).character}</p>
+                                        </div>
+                                    )}
+                                    {(caseData.subjective.history_of_present_illness as any).functional_status && (
+                                        <div>
+                                            <p className="text-xs font-semibold">Functional Status:</p>
+                                            <p className="text-sm text-muted-foreground">{(caseData.subjective.history_of_present_illness as any).functional_status}</p>
+                                        </div>
+                                    )}
+                                </div>
+                                {(caseData.subjective.history_of_present_illness as any).aggravating_factors && Array.isArray((caseData.subjective.history_of_present_illness as any).aggravating_factors) && (caseData.subjective.history_of_present_illness as any).aggravating_factors.length > 0 && (
+                                    <div>
+                                        <p className="text-xs font-semibold mb-1">Aggravating Factors:</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {(caseData.subjective.history_of_present_illness as any).aggravating_factors.map((factor: string, i: number) => (
+                                                <Badge key={i} variant="outline" className="text-xs">{factor}</Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {(caseData.subjective.history_of_present_illness as any).alleviating_factors && Array.isArray((caseData.subjective.history_of_present_illness as any).alleviating_factors) && (caseData.subjective.history_of_present_illness as any).alleviating_factors.length > 0 && (
+                                    <div>
+                                        <p className="text-xs font-semibold mb-1">Alleviating Factors:</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {(caseData.subjective.history_of_present_illness as any).alleviating_factors.map((factor: string, i: number) => (
+                                                <Badge key={i} variant="secondary" className="text-xs">{factor}</Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {(caseData.subjective.history_of_present_illness as any).associated_symptoms && Array.isArray((caseData.subjective.history_of_present_illness as any).associated_symptoms) && (caseData.subjective.history_of_present_illness as any).associated_symptoms.length > 0 && (
+                                    <div>
+                                        <p className="text-xs font-semibold mb-2">Associated Symptoms:</p>
+                                        <div className="space-y-2">
+                                            {(caseData.subjective.history_of_present_illness as any).associated_symptoms.map((symptom: any, i: number) => (
+                                                <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                                                    <span className="text-sm font-medium">{symptom.symptom || safeRender(symptom)}</span>
+                                                    {symptom.severity && (
+                                                        <span className="text-xs text-muted-foreground">Severity: {symptom.severity}/10</span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+                {caseData.subjective?.past_medical_history && caseData.subjective.past_medical_history.length > 0 && (
+                     <div>
+                        <h4 className="font-semibold text-sm mb-1">Past Medical History</h4>
+                        <ul className="list-disc list-inside text-muted-foreground">
+                            {caseData.subjective.past_medical_history.map((item, i) => (
+                                <li key={i}>
+                                    {typeof item === 'string' ? item : safeRender((item as any)?.condition || item)}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+                
+                {caseData.subjective?.current_medications && caseData.subjective.current_medications.length > 0 && (
+                     <div>
+                        <h4 className="font-semibold text-sm mb-1">Current Medications</h4>
+                        <div className="space-y-2">
+                            {caseData.subjective.current_medications.map((item, i) => {
+                                // Check if item is an object with medication details
+                                if (typeof item === 'object' && item !== null && (item as any).name) {
+                                    const med = item as any;
+                                    return (
+                                        <div key={i} className="p-3 bg-muted/30 rounded-md border">
+                                            <div className="flex items-start justify-between mb-2">
+                                                <div className="flex-1">
+                                                    <h5 className="font-semibold text-sm">{med.name}</h5>
+                                                    {med.indication && (
+                                                        <p className="text-xs text-muted-foreground mt-0.5">For: {med.indication}</p>
+                                                    )}
+                                                </div>
+                                                {med.status && (
+                                                    <Badge 
+                                                        variant={med.status === 'active' ? 'default' : 'secondary'}
+                                                        className="text-xs capitalize"
+                                                    >
+                                                        {med.status}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                                                {med.dosage && (
+                                                    <div>
+                                                        <span className="text-muted-foreground">Dosage:</span>
+                                                        <span className="ml-1 font-medium">{med.dosage}</span>
+                                                    </div>
+                                                )}
+                                                {med.frequency && (
+                                                    <div>
+                                                        <span className="text-muted-foreground">Frequency:</span>
+                                                        <span className="ml-1 font-medium">{med.frequency}</span>
+                                                    </div>
+                                                )}
+                                                {med.duration && (
+                                                    <div>
+                                                        <span className="text-muted-foreground">Duration:</span>
+                                                        <span className="ml-1 font-medium">{med.duration}</span>
+                                                    </div>
+                                                )}
+                                                {med.rxnorm_code && (
+                                                    <div className="col-span-2 md:col-span-3">
+                                                        <span className="text-muted-foreground">RxNorm Code:</span>
+                                                        <span className="ml-1 font-mono text-xs">{med.rxnorm_code}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                                // Fallback for simple string format
+                                return (
+                                    <div key={i} className="p-2 bg-muted/30 rounded-md border">
+                                        <p className="text-sm">{typeof item === 'string' ? item : safeRender((item as any)?.medication || item)}</p>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                 {caseData.subjective?.allergies && caseData.subjective.allergies.length > 0 && (
+                     <div>
+                        <h4 className="font-semibold text-sm mb-1 text-red-600">Allergies</h4>
+                         <ul className="space-y-2 mt-2">
+                            {caseData.subjective.allergies.map((item, i) => (
+                                <li key={i} className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-muted/30 p-2 rounded">
+                                    {/* Handle both object and string formats defensively */}
+                                    {typeof item === 'string' ? (
+                                        <span className="font-medium">{item}</span>
+                                    ) : (
+                                        <>
+                                            <span className="font-medium">
+                                                {safeRender(item.allergen_name || 'Unknown')} 
+                                                {item.allergen_type && <span className="text-xs text-muted-foreground ml-1">({safeRender(item.allergen_type)})</span>}
+                                            </span>
+                                            <span className="text-sm text-red-600 capitalize">
+                                                {safeRender(item.severity)} {item.reaction_type && `- ${safeRender(item.reaction_type)}`}
+                                            </span>
+                                        </>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
             </CardContent>
           </Card>
-
-          {/* History of Present Illness */}
-          {caseData.subjective?.history_of_present_illness && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4" />
-                  History of Present Illness
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {caseData.subjective.history_of_present_illness.narrative && (
-                  <div>
-                    <p className="text-sm font-medium mb-1">Narrative</p>
-                    <p className="text-muted-foreground">{caseData.subjective.history_of_present_illness.narrative}</p>
-                  </div>
-                )}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {caseData.subjective.history_of_present_illness.onset && (
-                    <div>
-                      <p className="text-sm font-medium">Onset</p>
-                      <p className="text-sm text-muted-foreground">{caseData.subjective.history_of_present_illness.onset}</p>
-                    </div>
-                  )}
-                  {caseData.subjective.history_of_present_illness.duration && (
-                    <div>
-                      <p className="text-sm font-medium">Duration</p>
-                      <p className="text-sm text-muted-foreground">{caseData.subjective.history_of_present_illness.duration}</p>
-                    </div>
-                  )}
-                  {caseData.subjective.history_of_present_illness.severity && (
-                    <div>
-                      <p className="text-sm font-medium">Severity</p>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {caseData.subjective.history_of_present_illness.severity.description} ({caseData.subjective.history_of_present_illness.severity.scale}/10)
-                      </p>
-                    </div>
-                  )}
-                </div>
-                {caseData.subjective.history_of_present_illness.character && (
-                  <div>
-                    <p className="text-sm font-medium mb-1">Character</p>
-                    <p className="text-sm text-muted-foreground">{caseData.subjective.history_of_present_illness.character}</p>
-                  </div>
-                )}
-                {caseData.subjective.history_of_present_illness.aggravating_factors?.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium mb-2">Aggravating Factors</p>
-                    <div className="flex flex-wrap gap-2">
-                      {caseData.subjective.history_of_present_illness.aggravating_factors.map((factor: string, i: number) => (
-                        <Badge key={i} variant="outline">{factor}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {caseData.subjective.history_of_present_illness.alleviating_factors?.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium mb-2">Alleviating Factors</p>
-                    <div className="flex flex-wrap gap-2">
-                      {caseData.subjective.history_of_present_illness.alleviating_factors.map((factor: string, i: number) => (
-                        <Badge key={i} variant="outline" className="bg-green-500/10">{factor}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Current Medications */}
-          {caseData.subjective?.current_medications && caseData.subjective.current_medications.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Pill className="w-4 h-4" />
-                  Current Medications
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {caseData.subjective.current_medications.map((med: any, i: number) => (
-                    <div key={i} className="p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-medium">{med.name}</p>
-                          <p className="text-sm text-muted-foreground">{med.dosage} - {med.frequency}</p>
-                          {med.indication && <p className="text-xs text-muted-foreground mt-1">For: {med.indication}</p>}
-                        </div>
-                        <Badge variant="outline" className="text-xs">{med.status}</Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Allergies */}
-          {caseData.subjective?.allergies && caseData.subjective.allergies.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-500" />
-                  Allergies
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {caseData.subjective.allergies.map((allergy: any, i: number) => (
-                    <div key={i} className="p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-red-700">{allergy.allergen_name}</p>
-                          <p className="text-sm text-muted-foreground capitalize">{allergy.allergen_type} - {allergy.reaction_type}</p>
-                        </div>
-                        <Badge variant="destructive" className="text-xs capitalize">{allergy.severity}</Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
 
-        {/* Objective Tab */}
         <TabsContent value="objective" className="space-y-4">
-          {/* Vital Signs */}
-          {caseData.objective?.vital_signs && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Activity className="w-4 h-4" />
-                  Vital Signs
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {caseData.objective.vital_signs.systolic_bp > 0 && (
-                    <div className="flex items-start gap-2">
-                      <Heart className="w-4 h-4 text-red-500 mt-1" />
-                      <div>
-                        <p className="text-sm font-medium">Blood Pressure</p>
-                        <p className="text-lg font-semibold">{caseData.objective.vital_signs.systolic_bp}/{caseData.objective.vital_signs.diastolic_bp}</p>
-                        <p className="text-xs text-muted-foreground">mmHg</p>
-                      </div>
-                    </div>
-                  )}
-                  {caseData.objective.vital_signs.heart_rate > 0 && (
-                    <div className="flex items-start gap-2">
-                      <Heart className="w-4 h-4 text-pink-500 mt-1" />
-                      <div>
-                        <p className="text-sm font-medium">Heart Rate</p>
-                        <p className="text-lg font-semibold">{caseData.objective.vital_signs.heart_rate}</p>
-                        <p className="text-xs text-muted-foreground">bpm</p>
-                      </div>
-                    </div>
-                  )}
-                  {caseData.objective.vital_signs.temperature > 0 && (
-                    <div className="flex items-start gap-2">
-                      <Thermometer className="w-4 h-4 text-orange-500 mt-1" />
-                      <div>
-                        <p className="text-sm font-medium">Temperature</p>
-                        <p className="text-lg font-semibold">{caseData.objective.vital_signs.temperature}</p>
-                        <p className="text-xs text-muted-foreground">°F</p>
-                      </div>
-                    </div>
-                  )}
-                  {caseData.objective.vital_signs.oxygen_saturation > 0 && (
-                    <div className="flex items-start gap-2">
-                      <Droplet className="w-4 h-4 text-blue-500 mt-1" />
-                      <div>
-                        <p className="text-sm font-medium">O2 Saturation</p>
-                        <p className="text-lg font-semibold">{caseData.objective.vital_signs.oxygen_saturation}</p>
-                        <p className="text-xs text-muted-foreground">%</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+             <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                        <Activity className="w-4 h-4" />
+                        Vitals & Findings
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {caseData.objective?.vital_signs ? (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                             {Object.entries(caseData.objective.vital_signs).map(([key, val]) => (
+                                 <div key={key} className="p-3 bg-muted/30 rounded-lg">
+                                     <p className="text-xs text-muted-foreground uppercase">{key.replace(/_/g, ' ')}</p>
+                                     <p className="font-semibold">{val}</p>
+                                 </div>
+                             ))}
+                        </div>
+                    ) : <p className="text-muted-foreground">No vital signs recorded.</p>}
 
-          {/* Lab Results */}
-          {caseData.objective?.lab_results && caseData.objective.lab_results.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  Laboratory Results
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {caseData.objective.lab_results.map((lab: any, i: number) => (
-                    <div key={i} className="p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{lab.test_name}</p>
-                          <p className="text-sm text-muted-foreground">{lab.value} {lab.unit}</p>
-                        </div>
-                        <div className="text-right">
-                          <Badge variant={lab.abnormal ? "destructive" : "outline"}>{lab.status}</Badge>
-                          {lab.abnormal && <p className="text-xs text-red-600 mt-1">Abnormal</p>}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                     {caseData.objective?.physical_examination && (
+                         <div>
+                            <h4 className="font-semibold text-sm mb-2">Physical Examination</h4>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {Object.entries(caseData.objective.physical_examination).map(([system, finding]) => (
+                                    <div key={system} className="border p-3 rounded-md">
+                                        <p className="text-xs font-semibold uppercase text-primary">{system}</p>
+                                        <p className="text-sm">{safeRender(finding)}</p>
+                                    </div>
+                                ))}
+                             </div>
+                         </div>
+                     )}
+
+                     {caseData.objective?.lab_results && caseData.objective.lab_results.length > 0 && (
+                         <div>
+                            <h4 className="font-semibold text-sm mb-2">Lab Results</h4>
+                            <div className="space-y-2">
+                                {caseData.objective.lab_results.map((lab, i) => (
+                                    <div key={i} className="flex justify-between items-center p-2 bg-muted/20 rounded">
+                                        <span>{lab.test_name}</span>
+                                        <span className="font-mono text-sm">{lab.value} {lab.unit}</span>
+                                    </div>
+                                ))}
+                            </div>
+                         </div>
+                     )}
+                </CardContent>
+             </Card>
         </TabsContent>
 
-        {/* Assessment Tab */}
         <TabsContent value="assessment" className="space-y-4">
-          {/* Clinical Impression */}
-          {caseData.assessment?.clinical_impression && (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Stethoscope className="w-4 h-4" />
-                  Clinical Impression
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {caseData.assessment.clinical_impression.summary && (
-                  <div>
-                    <p className="text-sm font-medium mb-1">Summary</p>
-                    <p className="text-muted-foreground">{caseData.assessment.clinical_impression.summary}</p>
-                  </div>
-                )}
-                <div className="grid grid-cols-2 gap-4">
-                  {caseData.assessment.clinical_impression.complexity_level && (
-                    <div>
-                      <p className="text-sm font-medium">Complexity</p>
-                      <Badge variant="outline" className="capitalize mt-1">{caseData.assessment.clinical_impression.complexity_level}</Badge>
-                    </div>
-                  )}
-                  {caseData.assessment.clinical_impression.diagnostic_certainty && (
-                    <div>
-                      <p className="text-sm font-medium">Diagnostic Certainty</p>
-                      <Badge variant="outline" className="capitalize mt-1">{caseData.assessment.clinical_impression.diagnostic_certainty}</Badge>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Problem List */}
-          {caseData.assessment?.problem_list && caseData.assessment.problem_list.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4" />
-                  Problem List
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {caseData.assessment.problem_list.map((problem: any, i: number) => (
-                    <div key={i} className="p-4 bg-muted/50 rounded-lg">
-                      <div className="flex items-start justify-between mb-2">
+                <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                        <Stethoscope className="w-4 h-4" />
+                        Clinical Assessment
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {caseData.assessment?.clinical_impression && (
                         <div>
-                          <p className="font-medium">#{problem.rank} - {problem.condition}</p>
-                          <p className="text-sm text-muted-foreground capitalize">{problem.problem_type}</p>
+                            <h4 className="font-semibold text-sm mb-1">Clinical Impression</h4>
+                            {typeof caseData.assessment.clinical_impression === 'string' ? (
+                                <p className="text-muted-foreground">{caseData.assessment.clinical_impression}</p>
+                            ) : (
+                                <div className="space-y-3 bg-muted/30 p-3 rounded-md border">
+                                    {(caseData.assessment.clinical_impression as any).summary && (caseData.assessment.clinical_impression as any).summary !== '' && (
+                                        <div>
+                                            <p className="text-xs font-semibold mb-1">Summary:</p>
+                                            <p className="text-sm text-muted-foreground">{(caseData.assessment.clinical_impression as any).summary}</p>
+                                        </div>
+                                    )}
+                                    {(caseData.assessment.clinical_impression as any).complexity_level && (caseData.assessment.clinical_impression as any).complexity_level !== '' && (
+                                        <div>
+                                            <p className="text-xs font-semibold mb-1">Complexity Level:</p>
+                                            <Badge variant="secondary" className="capitalize">{(caseData.assessment.clinical_impression as any).complexity_level}</Badge>
+                                        </div>
+                                    )}
+                                    {(caseData.assessment.clinical_impression as any).diagnostic_certainty && (caseData.assessment.clinical_impression as any).diagnostic_certainty !== '' && (
+                                        <div>
+                                            <p className="text-xs font-semibold mb-1">Diagnostic Certainty:</p>
+                                            <Badge variant="secondary" className="capitalize">{(caseData.assessment.clinical_impression as any).diagnostic_certainty}</Badge>
+                                        </div>
+                                    )}
+                                    {(caseData.assessment.clinical_impression as any).main_concerns && Array.isArray((caseData.assessment.clinical_impression as any).main_concerns) && (caseData.assessment.clinical_impression as any).main_concerns.filter((c: any) => c && safeRender(c) !== '').length > 0 && (
+                                        <div>
+                                            <p className="text-xs font-semibold mb-1">Main Concerns:</p>
+                                            <ul className="list-disc list-inside space-y-1">
+                                                {(caseData.assessment.clinical_impression as any).main_concerns.filter((c: any) => c && safeRender(c) !== '').map((concern: any, i: number) => (
+                                                    <li key={i} className="text-sm text-muted-foreground">{safeRender(concern)}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {(caseData.assessment.clinical_impression as any).key_findings && Array.isArray((caseData.assessment.clinical_impression as any).key_findings) && (caseData.assessment.clinical_impression as any).key_findings.filter((f: any) => f && safeRender(f) !== '').length > 0 && (
+                                        <div>
+                                            <p className="text-xs font-semibold mb-1">Key Findings:</p>
+                                            <ul className="list-disc list-inside space-y-1">
+                                                {(caseData.assessment.clinical_impression as any).key_findings.filter((f: any) => f && safeRender(f) !== '').map((finding: any, i: number) => (
+                                                    <li key={i} className="text-sm text-muted-foreground">{safeRender(finding)}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
-                        <Badge variant="outline" className="capitalize">{problem.severity}</Badge>
-                      </div>
-                      {problem.clinical_reasoning && (
-                        <p className="text-sm text-muted-foreground mt-2">{problem.clinical_reasoning}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
+                    )}
+                    {caseData.assessment?.problem_list && caseData.assessment.problem_list.length > 0 && (
+                        <div>
+                            <h4 className="font-semibold text-sm mb-2">Problem List</h4>
+                            <div className="space-y-2">
+                                {caseData.assessment.problem_list.map((problem, i) => (
+                                    <div key={i} className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full ${problem.status === 'resolved' ? 'bg-green-500' : 'bg-red-500'}`} />
+                                        <span>{problem.diagnosis}</span>
+                                        {problem.code && <Badge variant="outline" className="text-xs">{problem.code}</Badge>}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
             </Card>
-          )}
         </TabsContent>
 
-        {/* Plan Tab */}
         <TabsContent value="plan" className="space-y-4">
-          {/* Medications */}
-          {caseData.plan?.medications && caseData.plan.medications.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Pill className="w-4 h-4" />
-                  Prescribed Medications
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {caseData.plan.medications.map((med: any, i: number) => (
-                    <div key={i} className="p-4 bg-muted/50 rounded-lg">
-                      <div className="flex items-start justify-between mb-2">
+             <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                        <ClipboardList className="w-4 h-4" />
+                        Care Plan
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {caseData.plan?.medications && caseData.plan.medications.length > 0 && (
                         <div>
-                          <p className="font-medium">{med.name}</p>
-                          <p className="text-sm text-muted-foreground">{med.dosage} - {med.frequency} ({med.route})</p>
-                          {med.indication && <p className="text-xs text-muted-foreground mt-1">For: {med.indication}</p>}
+                             <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                                <Pill className="w-3 h-3" /> Medications
+                             </h4>
+                             <div className="space-y-3">
+                                {caseData.plan.medications.map((med, i) => (
+                                    <div key={i} className="p-3 border rounded-lg">
+                                        <div className="flex justify-between">
+                                            <span className="font-medium">{med.drug_name}</span>
+                                            <span className="text-sm text-muted-foreground">{med.dosage}</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-1">{med.frequency} • {med.duration} • {med.instructions}</p>
+                                    </div>
+                                ))}
+                             </div>
                         </div>
-                        <Badge variant="outline">{med.status}</Badge>
-                      </div>
-                      {med.instructions && (
-                        <p className="text-sm text-muted-foreground mt-2">{med.instructions}</p>
-                      )}
-                      {med.warnings && med.warnings.length > 0 && (
-                        <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded">
-                          <p className="text-xs font-medium text-yellow-700">Warnings:</p>
-                          <ul className="text-xs text-yellow-700 list-disc list-inside">
-                            {med.warnings.map((warning: string, j: number) => (
-                              <li key={j}>{warning}</li>
-                            ))}
-                          </ul>
+                    )}
+                    {caseData.plan?.patient_education && (
+                        <div>
+                            <h4 className="font-semibold text-sm mb-1">Patient Education</h4>
+                            {typeof caseData.plan.patient_education === 'string' ? (
+                                <p className="text-muted-foreground bg-muted/30 p-3 rounded-md border">
+                                    {caseData.plan.patient_education}
+                                </p>
+                            ) : (
+                                <div className="space-y-3 bg-muted/30 p-3 rounded-md border">
+                                    {caseData.plan.patient_education.topics && Array.isArray(caseData.plan.patient_education.topics) && caseData.plan.patient_education.topics.filter(t => t && safeRender(t) !== '').length > 0 && (
+                                        <div>
+                                            <p className="text-xs font-semibold mb-1">Topics Covered:</p>
+                                            <ul className="list-disc list-inside space-y-1">
+                                                {caseData.plan.patient_education.topics.filter(t => t && safeRender(t) !== '').map((topic, i) => (
+                                                    <li key={i} className="text-sm text-muted-foreground">{safeRender(topic)}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {caseData.plan.patient_education.education_provided && caseData.plan.patient_education.education_provided !== '' && (
+                                        <div>
+                                            <p className="text-xs font-semibold mb-1">Education Provided:</p>
+                                            <p className="text-sm text-muted-foreground">{caseData.plan.patient_education.education_provided}</p>
+                                        </div>
+                                    )}
+                                    {caseData.plan.patient_education.patient_understanding && caseData.plan.patient_education.patient_understanding !== '' && (
+                                        <div>
+                                            <p className="text-xs font-semibold mb-1">Patient Understanding:</p>
+                                            <p className="text-sm text-muted-foreground">{caseData.plan.patient_education.patient_understanding}</p>
+                                        </div>
+                                    )}
+                                    {caseData.plan.patient_education.education_materials && (
+                                        Array.isArray(caseData.plan.patient_education.education_materials) ? (
+                                            caseData.plan.patient_education.education_materials.filter(m => m && safeRender(m) !== '').length > 0 && (
+                                                <div>
+                                                    <p className="text-xs font-semibold mb-1">Materials:</p>
+                                                    <ul className="list-disc list-inside space-y-1">
+                                                        {caseData.plan.patient_education.education_materials.filter(m => m && safeRender(m) !== '').map((material, i) => {
+                                                            // Check if material is an object
+                                                            if (typeof material === 'object' && material !== null) {
+                                                                return (
+                                                                    <li key={i} className="text-sm">
+                                                                        <div className="space-y-1 ml-2">
+                                                                            {Object.entries(material).map(([key, value]) => (
+                                                                                value && value !== '' && (
+                                                                                    <div key={key} className="flex gap-2">
+                                                                                        <span className="font-medium text-muted-foreground">{key}:</span>
+                                                                                        <span className="text-muted-foreground">{safeRender(value)}</span>
+                                                                                    </div>
+                                                                                )
+                                                                            ))}
+                                                                        </div>
+                                                                    </li>
+                                                                );
+                                                            }
+                                                            return <li key={i} className="text-sm text-muted-foreground">{safeRender(material)}</li>;
+                                                        })}
+                                                    </ul>
+                                                </div>
+                                            )
+                                        ) : typeof caseData.plan.patient_education.education_materials === 'object' ? (
+                                            Object.entries(caseData.plan.patient_education.education_materials).filter(([_, v]) => v && safeRender(v) !== '').length > 0 && (
+                                                <div>
+                                                    <p className="text-xs font-semibold mb-1">Materials:</p>
+                                                    <div className="space-y-2 ml-4">
+                                                        {Object.entries(caseData.plan.patient_education.education_materials).filter(([_, v]) => v && safeRender(v) !== '').map(([key, value]) => (
+                                                            <div key={key} className="flex gap-2">
+                                                                <span className="font-medium text-sm">{key}:</span>
+                                                                <span className="text-sm text-muted-foreground">{safeRender(value)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )
+                                        ) : null
+                                    )}
+                                </div>
+                            )}
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Follow-up */}
-          {caseData.plan?.follow_up && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Follow-up Plan
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  {caseData.plan.follow_up.follow_up_date && (
-                    <div>
-                      <p className="text-sm font-medium">Follow-up Date</p>
-                      <p className="text-sm text-muted-foreground">{format(new Date(caseData.plan.follow_up.follow_up_date), 'MMM dd, yyyy')}</p>
-                    </div>
-                  )}
-                  {caseData.plan.follow_up.follow_up_type && (
-                    <div>
-                      <p className="text-sm font-medium">Type</p>
-                      <Badge variant="outline" className="capitalize mt-1">{caseData.plan.follow_up.follow_up_type.replace('_', ' ')}</Badge>
-                    </div>
-                  )}
-                </div>
-                {caseData.plan.follow_up.follow_up_reason && (
-                  <div>
-                    <p className="text-sm font-medium mb-1">Reason</p>
-                    <p className="text-sm text-muted-foreground">{caseData.plan.follow_up.follow_up_reason}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                    )}
+                     {caseData.plan?.follow_up && (
+                        <div>
+                            <h4 className="font-semibold text-sm mb-1">Follow Up</h4>
+                             <div className="flex gap-4">
+                                {caseData.plan.follow_up.date && parseBackendDate(caseData.plan.follow_up.date) && <Badge variant="secondary">Date: {format(parseBackendDate(caseData.plan.follow_up.date)!, 'MMM dd, yyyy')}</Badge>}
+                                {caseData.plan.follow_up.type && <Badge variant="outline">{caseData.plan.follow_up.type}</Badge>}
+                             </div>
+                             {caseData.plan.follow_up.instructions && <p className="text-sm mt-2 text-muted-foreground">{caseData.plan.follow_up.instructions}</p>}
+                        </div>
+                    )}
+                </CardContent>
+             </Card>
         </TabsContent>
       </Tabs>
 
@@ -529,13 +609,13 @@ export default function PatientCaseDetail() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {caseData.doctor_notes.map((note: any, i: number) => (
+              {caseData.doctor_notes.map((note, i) => (
                 <div key={i} className="p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-sm">Dr. {note.doctor_name || 'Unknown'}</span>
-                    <span className="text-xs text-muted-foreground">{format(new Date(note.created_at), 'MMM dd, yyyy')}</span>
+                    <span className="font-medium text-sm">Doctor Note ({note.note_type})</span>
+                    <span className="text-xs text-muted-foreground">{parseBackendDate(note.created_at) ? format(parseBackendDate(note.created_at)!, 'MMM dd, yyyy') : 'Unknown'}</span>
                   </div>
-                  <p className="text-sm">{note.note}</p>
+                  <p className="text-sm">{note.content}</p>
                 </div>
               ))}
             </div>

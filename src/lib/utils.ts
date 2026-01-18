@@ -9,6 +9,22 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Parse date string from backend (ensures UTC timezone)
+ * Backend returns timestamps without 'Z' suffix, causing timezone issues
+ */
+export function parseBackendDate(dateString: string | undefined | null): Date | null {
+  if (!dateString) return null;
+  
+  // If the date string doesn't end with 'Z' and looks like ISO format without timezone
+  // add 'Z' to treat it as UTC
+  if (dateString.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/) && !dateString.endsWith('Z')) {
+    return new Date(dateString + 'Z');
+  }
+  
+  return new Date(dateString);
+}
+
+/**
  * Format date to readable string
  */
 export function formatDate(

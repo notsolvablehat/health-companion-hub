@@ -1,59 +1,100 @@
-// src/services/cases.ts
-
 import api from './api';
 import type {
-  Case,
-  CaseDetail,
+  CaseResponse,
+  CaseCreate,
+  CaseUpdate,
+  CaseApprovalRequest,
+  DoctorNoteCreate,
+  DoctorNote,
   CaseListResponse,
-  CreateCaseRequest,
-  UpdateCaseStatusRequest,
+  DoctorNoteListResponse
 } from '@/types/case';
 
 export const casesService = {
   /**
-   * Get all cases for current user (patient)
-   * Backend endpoint: GET /cases/patient/:patient_id/list
+   * Create a new case (Doctor only)
+   * POST /cases/
    */
-  getCases: async (
-    userId: string,
-    params?: {
-      status?: string;
+  createCase: async (data: CaseCreate): Promise<CaseResponse> => {
+    const response = await api.post<CaseResponse>('/cases/', data);
+    return response.data;
+  },
+
+  /**
+   * Get complete case details (merge Postgres + MongoDB data)
+   * GET /cases/:case_id
+   */
+  getCase: async (caseId: string): Promise<CaseResponse> => {
+    const response = await api.get<CaseResponse>(`/cases/${caseId}`);
+    return response.data;
+  },
+
+  /**
+   * Update case (subjective/objective/assessment/plan sections)
+   * PATCH /cases/:case_id
+   */
+  updateCase: async (caseId: string, data: CaseUpdate): Promise<CaseResponse> => {
+    const response = await api.patch<CaseResponse>(`/cases/${caseId}`, data);
+    return response.data;
+  },
+
+  /**
+   * Doctor approval workflow with optional approval notes
+   * POST /cases/:case_id/approve
+   */
+  approveCase: async (caseId: string, data: CaseApprovalRequest): Promise<CaseResponse> => {
+    const response = await api.post<CaseResponse>(`/cases/${caseId}/approve`, data);
+    return response.data;
+  },
+
+  /**
+   * List all cases for a doctor
+   * GET /cases/doctor/:doctor_id/list
+   */
+  listDoctorCases: async (
+    doctorId: string, 
+    params?: { 
+      skip?: number; 
+      limit?: number; 
+      status?: string 
     }
   ): Promise<CaseListResponse> => {
-    const response = await api.get<CaseListResponse>(
-      `/cases/patient/${userId}/list`,
-      { params }
-    );
+    const response = await api.get<CaseListResponse>(`/cases/doctor/${doctorId}/list`, { params });
     return response.data;
   },
 
   /**
-   * Get single case details
-   * Backend endpoint: GET /cases/:case_id
+   * List all cases for a patient
+   * GET /cases/patient/:patient_id/list
    */
-  getCaseById: async (caseId: string): Promise<CaseDetail> => {
-    const response = await api.get<CaseDetail>(`/cases/${caseId}`);
+  listPatientCases: async (
+    patientId: string, 
+    params?: { 
+      skip?: number; 
+      limit?: number 
+    }
+  ): Promise<CaseListResponse> => {
+    const response = await api.get<CaseListResponse>(`/cases/patient/${patientId}/list`, { params });
     return response.data;
   },
 
   /**
-   * Create a new case (Patient only)
+   * Add a note to case (Doctor only)
+   * POST /cases/:case_id/notes
    */
-  createCase: async (data: CreateCaseRequest): Promise<CaseDetail> => {
-    const response = await api.post<CaseDetail>('/cases', data);
+  addNote: async (caseId: string, data: DoctorNoteCreate): Promise<DoctorNote> => {
+    const response = await api.post<DoctorNote>(`/cases/${caseId}/notes`, data);
     return response.data;
   },
 
   /**
-   * Update case status (Doctor only)
+   * Get all notes for a case
+   * GET /cases/:case_id/notes
    */
-  updateCaseStatus: async (
-    caseId: string,
-    data: UpdateCaseStatusRequest
-  ): Promise<CaseDetail> => {
-    const response = await api.patch<CaseDetail>(`/cases/${caseId}/status`, data);
+  getNotes: async (caseId: string): Promise<DoctorNoteListResponse> => {
+    const response = await api.get<DoctorNoteListResponse>(`/cases/${caseId}/notes`);
     return response.data;
-  },
+  }
 };
 
 export default casesService;

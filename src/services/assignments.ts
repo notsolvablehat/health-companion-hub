@@ -15,7 +15,7 @@ export const assignmentsService = {
    * Get assigned patients (Doctor only)
    */
   getMyPatients: async (): Promise<PatientListResponse> => {
-    const response = await api.get<PatientListResponse>('/assignments/my-patients');
+    const response = await api.get<PatientListResponse>('/assignments/patient');
     return response.data;
   },
 

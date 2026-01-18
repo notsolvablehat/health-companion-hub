@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
-import { Bell, Check, Loader2, Info, AlertCircle, FileText, UserPlus, FileCheck } from 'lucide-react';
+import { Bell, Check, Loader2, Info, AlertCircle, FileText, UserPlus, FileCheck, ArrowLeft, History } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { parseBackendDate } from '@/lib/utils';
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -14,19 +16,27 @@ import { Button } from '@/components/ui/button';
 import { useNotification } from '@/contexts/NotificationContext';
 import { notificationsService } from '@/services';
 import type { Notification } from '@/types/notification';
-
 export function NotificationDropdown() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { markAsRead, markAllAsRead, unreadCount } = useNotification();
-  const [isOpen, setIsOpen] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
-  // Fetch notifications when dropdown opens (or we could just fetch always)
-  // For better UX, we'll fetch when mounted but re-fetch can be triggered manually
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['notifications', 'list'],
+  // Always call both hooks (Rules of Hooks requirement)
+  // Fetch recent unread notifications
+  const { data, isLoading } = useQuery({
+    queryKey: ['notifications', 'list', 'unread'],
     queryFn: () => notificationsService.getNotifications(1, 20),
-    // We can rely on global state invalidation, but here we explicitly refetch when needed
     staleTime: 1000 * 60, // 1 minute
+    enabled: !showHistory && !!user, // Only fetch when authenticated and not viewing history
+  });
+
+  // Fetch all notifications history (including read ones)
+  const { data: historyData, isLoading: isLoadingHistory } = useQuery({
+    queryKey: ['notifications', 'list', 'all'],
+    queryFn: () => notificationsService.getNotifications(1, 50), // Get more for history
+    staleTime: 1000 * 60,
+    enabled: showHistory && !!user, // Only fetch when authenticated and viewing history
   });
 
   const handleNotificationClick = async (notification: Notification) => {
@@ -34,8 +44,10 @@ export function NotificationDropdown() {
       if (!notification.is_read) {
         await markAsRead(notification.id);
       }
-      if (notification.link) {
-        navigate(notification.link);
+      if (notification.link && user?.role) {
+        // Navigate to role-based route
+        const roleBasedPath = `/${user.role}${notification.link}`;
+        navigate(roleBasedPath);
       }
     } catch (error) {
       console.error('Failed to handle notification click:', error);
@@ -59,37 +71,57 @@ export function NotificationDropdown() {
     }
   };
 
+  const currentData = showHistory ? historyData : data;
+  const currentIsLoading = showHistory ? isLoadingHistory : isLoading;
+
   return (
     <DropdownMenuContent align="end" className="w-80 p-0" forceMount>
       <DropdownMenuLabel className="flex items-center justify-between p-4">
-        <span className="font-semibold">Notifications</span>
-        {unreadCount > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs h-auto py-1 px-2"
-            onClick={() => markAllAsRead()}
-          >
-            Mark all read
-          </Button>
+        {showHistory ? (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto py-1 px-2 -ml-2"
+              onClick={() => setShowHistory(false)}
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Back
+            </Button>
+            <span className="font-semibold">History</span>
+          </>
+        ) : (
+          <>
+            <span className="font-semibold">Notifications</span>
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs h-auto py-1 px-2"
+                onClick={() => markAllAsRead()}
+              >
+                Mark all read
+              </Button>
+            )}
+          </>
         )}
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
 
       <ScrollArea className="h-[350px]">
-        {isLoading ? (
+        {currentIsLoading ? (
           <div className="flex items-center justify-center py-8 text-muted-foreground">
             <Loader2 className="w-6 h-6 animate-spin mr-2" />
             <span>Loading...</span>
           </div>
-        ) : data?.items?.length === 0 ? (
+        ) : currentData?.items?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Bell className="w-10 h-10 mb-3 opacity-20" />
             <p className="text-sm">No notifications yet</p>
           </div>
         ) : (
           <div className="py-2">
-            {data?.items.map((notification) => (
+            {currentData?.items.map((notification) => (
               <DropdownMenuItem
                 key={notification.id}
                 className={`flex items-start gap-3 p-3 mx-2 rounded-lg cursor-pointer my-1 focus:bg-accent ${
@@ -108,7 +140,7 @@ export function NotificationDropdown() {
                     {notification.message}
                   </p>
                   <p className="text-[10px] text-muted-foreground/70">
-                    {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                    {parseBackendDate(notification.created_at) ? formatDistanceToNow(parseBackendDate(notification.created_at)!, { addSuffix: true }) : 'Unknown'}
                   </p>
                 </div>
                 {!notification.is_read && (
@@ -119,6 +151,23 @@ export function NotificationDropdown() {
           </div>
         )}
       </ScrollArea>
+
+      {!showHistory && (
+        <>
+          <DropdownMenuSeparator />
+          <div className="p-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-muted-foreground hover:text-foreground"
+              onClick={() => setShowHistory(true)}
+            >
+              <History className="w-4 h-4 mr-2" />
+              View History
+            </Button>
+          </div>
+        </>
+      )}
     </DropdownMenuContent>
   );
 }

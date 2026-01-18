@@ -11,12 +11,15 @@ export interface Assignment {
 }
 
 export interface AssignedPatient {
+  user_id?: string;
   patient_id: string;
+  name?: string; // From backend API
+  email?: string; // From backend API
   first_name: string;
   last_name: string;
   date_of_birth: string;
   gender: string;
-  assigned_at: string;
+  assigned_at?: string;
   last_case_date?: string;
   active_cases_count?: number;
 }

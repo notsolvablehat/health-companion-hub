@@ -25,6 +25,8 @@ import DoctorPatients from '@/pages/doctor/Patients';
 import DoctorPatientDetail from '@/pages/doctor/PatientDetail';
 import DoctorCases from '@/pages/doctor/Cases';
 import DoctorCaseReview from '@/pages/doctor/CaseReview';
+import DoctorCaseFullData from '@/pages/doctor/CaseFullData';
+import DoctorCreateCase from '@/pages/doctor/CreateCase';
 import DoctorChat from '@/pages/doctor/Chat';
 
 // Shared Pages
@@ -135,8 +137,16 @@ export const router = createBrowserRouter([
                 element: <DoctorCases />,
               },
               {
+                path: '/doctor/cases/new',
+                element: <DoctorCreateCase />,
+              },
+              {
                 path: '/doctor/cases/:caseId',
                 element: <DoctorCaseReview />,
+              },
+              {
+                path: '/doctor/cases/:caseId/full-data',
+                element: <DoctorCaseFullData />,
               },
               {
                 path: '/doctor/chat',

@@ -77,7 +77,8 @@ export default function PatientDashboard() {
         return <Clock className="w-3 h-3" />;
       case 'under_review':
         return <Activity className="w-3 h-3" />;
-      case 'approved':
+      case 'approved_by_doctor':
+      case 'approved': // Fallback
         return <CheckCircle className="w-3 h-3" />;
       default:
         return <FileText className="w-3 h-3" />;
@@ -90,7 +91,8 @@ export default function PatientDashboard() {
         return 'bg-warning/10 text-warning border-warning/20';
       case 'under_review':
         return 'bg-info/10 text-info border-info/20';
-      case 'approved':
+      case 'approved_by_doctor':
+      case 'approved': // Fallback
         return 'bg-success/10 text-success border-success/20';
       case 'closed':
         return 'bg-muted text-muted-foreground';
@@ -262,7 +264,7 @@ export default function PatientDashboard() {
                 <Button size="sm" asChild>
                   <Link to="/patient/cases">
                     <Plus className="w-4 h-4 mr-2" />
-                    Create First Case
+                    View Cases
                   </Link>
                 </Button>
               </div>
@@ -533,7 +535,7 @@ export default function PatientDashboard() {
             >
               <Link to="/patient/cases">
                 <FileText className="w-6 h-6" />
-                <span>New Case</span>
+                <span>My Cases</span>
               </Link>
             </Button>
             <Button

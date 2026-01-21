@@ -11,6 +11,7 @@ import {
   Activity,
   Stethoscope,
   ClipboardList,
+  CalendarCheck,
 } from 'lucide-react';
 import type { UserRole } from '@/types/auth';
 
@@ -24,7 +25,7 @@ const patientNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/patient/dashboard', icon: LayoutDashboard },
   { label: 'My Cases', href: '/patient/cases', icon: FileText },
   { label: 'Reports', href: '/patient/reports', icon: Upload },
-  { label: 'My Doctors', href: '/patient/doctors', icon: Stethoscope },
+  { label: 'Bookings', href: '/patient/bookings', icon: CalendarCheck },
   { label: 'AI Chat', href: '/patient/chat', icon: MessageSquare },
 ];
 
@@ -32,6 +33,7 @@ const doctorNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/doctor/dashboard', icon: LayoutDashboard },
   { label: 'My Patients', href: '/doctor/patients', icon: Users },
   { label: 'Cases', href: '/doctor/cases', icon: ClipboardList },
+  { label: 'Bookings', href: '/doctor/bookings', icon: CalendarCheck },
   { label: 'AI Chat', href: '/doctor/chat', icon: MessageSquare },
 ];
 

@@ -617,9 +617,9 @@ export default function CaseFullData() {
               </div>
             </div>
             <div>
-              <Label className="text-sm font-medium">Severity</Label>
+              <Label className="text-sm font-medium">Case Type</Label>
               <div className="mt-1">
-                {renderObjectAsKeyValue({ severity: caseData.severity }, '', 0)}
+                <Badge variant="outline">{caseData.case_type || 'N/A'}</Badge>
               </div>
             </div>
             <div>

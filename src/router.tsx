@@ -16,7 +16,7 @@ import PatientDashboard from '@/pages/patient/Dashboard';
 import PatientCases from '@/pages/patient/Cases';
 import PatientCaseDetail from '@/pages/patient/CaseDetail';
 import PatientReports from '@/pages/patient/Reports';
-import PatientDoctors from '@/pages/patient/MyDoctors';
+import PatientBookings from '@/pages/patient/Bookings';
 import PatientChat from '@/pages/patient/Chat';
 
 // Doctor Pages
@@ -27,6 +27,7 @@ import DoctorCases from '@/pages/doctor/Cases';
 import DoctorCaseReview from '@/pages/doctor/CaseReview';
 import DoctorCaseFullData from '@/pages/doctor/CaseFullData';
 import DoctorCreateCase from '@/pages/doctor/CreateCase';
+import DoctorBookings from '@/pages/doctor/Bookings';
 import DoctorChat from '@/pages/doctor/Chat';
 
 // Shared Pages
@@ -89,8 +90,8 @@ export const router = createBrowserRouter([
                 element: <PatientReports />,
               },
               {
-                path: '/patient/doctors',
-                element: <PatientDoctors />,
+                path: '/patient/bookings',
+                element: <PatientBookings />,
               },
               {
                 path: '/patient/chat',
@@ -147,6 +148,10 @@ export const router = createBrowserRouter([
               {
                 path: '/doctor/cases/:caseId/full-data',
                 element: <DoctorCaseFullData />,
+              },
+              {
+                path: '/doctor/bookings',
+                element: <DoctorBookings />,
               },
               {
                 path: '/doctor/chat',

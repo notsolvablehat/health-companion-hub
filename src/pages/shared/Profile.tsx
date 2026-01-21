@@ -210,26 +210,26 @@ export default function Profile() {
                   <span>{user.email}</span>
                 </div>
 
-                {patientProfile?.medical_info?.phone_number && (
+                {patientProfile?.phone_number && (
                   <div className="flex items-center justify-center sm:justify-start gap-2">
                     <Phone className="w-4 h-4" />
-                    <span>{patientProfile.medical_info.phone_number}</span>
+                    <span>{patientProfile.phone_number}</span>
                   </div>
                 )}
 
-                {patientProfile?.medical_info?.date_of_birth && (
+                {patientProfile?.date_of_birth && (
                   <div className="flex items-center justify-center sm:justify-start gap-2">
                     <Calendar className="w-4 h-4" />
                     <span>
-                      {formatDate(patientProfile.medical_info.date_of_birth)} ({calculateAge(patientProfile.medical_info.date_of_birth)} years old)
+                      {formatDate(patientProfile.date_of_birth)} ({calculateAge(patientProfile.date_of_birth)} years old)
                     </span>
                   </div>
                 )}
 
-                {patientProfile?.medical_info?.address && (
+                {patientProfile?.address && (
                   <div className="flex items-center justify-center sm:justify-start gap-2">
                     <MapPin className="w-4 h-4" />
-                    <span>{patientProfile.medical_info.address}</span>
+                    <span>{patientProfile.address}</span>
                   </div>
                 )}
               </div>

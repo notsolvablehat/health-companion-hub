@@ -265,7 +265,7 @@ export default function CreateCase() {
                   ) : (
                     patients.map((patient) => (
                       <SelectItem key={patient.patient_id} value={patient.patient_id}>
-                        {patient.name || `${patient.first_name} ${patient.last_name}`} ({patient.email || patient.patient_id.substring(0, 8)})
+                        {patient.name || patient.patient_id} ({patient.email || patient.patient_id.substring(0, 8)})
                       </SelectItem>
                     ))
                   )}

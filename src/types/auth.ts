@@ -96,3 +96,23 @@ export interface OnboardPatientRequest {
   emergency_contact_phone?: string;
   emergency_contact_relationship?: string;
 }
+
+export interface OnboardDoctorRequest {
+  first_name: string;
+  last_name: string;
+  specialisation: string;
+  license_number: string;
+  phone?: string;
+  max_patients?: number;
+}
+
+export interface UpdateProfileRequest {
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  address?: string;
+  medical_history?: string[];
+  allergies?: string[];
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+}

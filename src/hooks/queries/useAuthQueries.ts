@@ -2,7 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { authService, usersService, tokenManager } from '@/services';
+import { authService, tokenManager } from '@/services';
+import { usersService } from '@/services/users';
 import { QUERY_KEYS } from '@/lib/constants';
 import type {
   LoginRequest,

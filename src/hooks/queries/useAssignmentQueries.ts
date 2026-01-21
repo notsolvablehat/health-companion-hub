@@ -9,7 +9,18 @@ import type {
 } from '@/types/assignment';
 
 /**
- * Hook to get assigned patients (Doctor only)
+ * Hook to get all available specialities
+ */
+export function useSpecialities() {
+  return useQuery({
+    queryKey: ['specialities'],
+    queryFn: () => assignmentsService.getSpecialities(),
+    staleTime: 30 * 60 * 1000, // 30 minutes - specialities rarely change
+  });
+}
+
+/**
+ * Hook to get assigned patients with history (Doctor only)
  */
 export function useMyPatients() {
   return useQuery({
@@ -20,7 +31,7 @@ export function useMyPatients() {
 }
 
 /**
- * Hook to get assigned doctors (Patient only)
+ * Hook to get assigned doctors with history (Patient only)
  */
 export function useMyDoctors() {
   return useQuery({

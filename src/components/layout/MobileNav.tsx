@@ -7,8 +7,8 @@ import {
   Users,
   MessageSquare,
   Settings,
-  Stethoscope,
   ClipboardList,
+  CalendarCheck,
 } from 'lucide-react';
 import type { UserRole } from '@/types/auth';
 
@@ -22,7 +22,7 @@ const patientNavItems: NavItem[] = [
   { label: 'Home', href: '/patient/dashboard', icon: LayoutDashboard },
   { label: 'Cases', href: '/patient/cases', icon: FileText },
   { label: 'Reports', href: '/patient/reports', icon: Upload },
-  { label: 'Doctors', href: '/patient/doctors', icon: Stethoscope },
+  { label: 'Bookings', href: '/patient/bookings', icon: CalendarCheck },
   { label: 'Chat', href: '/patient/chat', icon: MessageSquare },
 ];
 
@@ -30,8 +30,8 @@ const doctorNavItems: NavItem[] = [
   { label: 'Home', href: '/doctor/dashboard', icon: LayoutDashboard },
   { label: 'Patients', href: '/doctor/patients', icon: Users },
   { label: 'Cases', href: '/doctor/cases', icon: ClipboardList },
+  { label: 'Bookings', href: '/doctor/bookings', icon: CalendarCheck },
   { label: 'Chat', href: '/doctor/chat', icon: MessageSquare },
-  { label: 'Settings', href: '/doctor/settings', icon: Settings },
 ];
 
 interface MobileNavProps {

@@ -7,8 +7,7 @@ import type {
   User,
   UserProfile,
   OnboardPatientRequest,
-
-
+  OnboardDoctorRequest,
 } from '@/types/auth';
 
 // Helper to send OAuth2 form data
@@ -139,9 +138,20 @@ export const authService = {
     return response.data;
   },
 
-
-
-
+  onboardDoctor: async (data: OnboardDoctorRequest): Promise<UserProfile> => {
+    const payload = {
+      role: 'doctor',
+      first_name: data.first_name,
+      last_name: data.last_name,
+      specialisation: data.specialisation,
+      license: data.license_number,
+      phone_number: data.phone || '',
+      max_patients: data.max_patients || 20,
+    };
+    
+    const response = await api.post<UserProfile>('/users/onboard', payload);
+    return response.data;
+  },
 
   logout: (): void => {
     tokenManager.clear();

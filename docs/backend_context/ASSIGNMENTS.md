@@ -70,6 +70,49 @@ Fetch all available doctor specializations in the system.
 
 ---
 
+### **Get Patient by Email (Doctor View)**
+Fetch complete patient information by email if the patient is assigned to the logged-in doctor.
+
+- **Endpoint**: `GET /assignments/get-my-patient/{patient_email}`
+- **Auth**: Required (Doctor role only)
+- **Path Parameter**: `patient_email` - Email address of the patient
+- **Response**:
+```json
+{
+  "user_id": "patient-uuid-123",
+  "patient_id": "PAT123456",
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "username": "johndoe",
+  "is_onboarded": true,
+  "created_at": "2025-06-15T10:00:00Z",
+  "date_of_birth": "1985-05-15",
+  "gender": "male",
+  "phone_number": "+1234567890",
+  "address": "123 Main St, City, State 12345",
+  "blood_group": "O+",
+  "height_cm": 175.5,
+  "weight_kg": 72.3,
+  "allergies": ["Penicillin", "Peanuts"],
+  "current_medications": ["Lisinopril 10mg daily"],
+  "medical_history": ["Hypertension", "Type 2 Diabetes"],
+  "emergency_contact_name": "Jane Doe",
+  "emergency_contact_phone": "+1234567891"
+}
+```
+
+**Use Cases:**
+- Look up patient details by email when creating a case
+- Verify patient information before assignment
+- Quick patient profile access from email reference
+
+**Error Cases:**
+- `400`: User is required
+- `403`: Only doctors can access this endpoint
+- `404`: Patient not found or not assigned to the requesting doctor
+
+---
+
 ### **Get My Patients (Doctor View)**
 Fetch all patients currently assigned to the logged-in doctor, including historical assignments.
 
@@ -285,6 +328,33 @@ Historical record of a previously assigned patient.
 
 ---
 
+### **`PatientDetailResponse`**
+Complete patient information with medical profile (for doctors).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `user_id` | `str` | User UUID. |
+| `patient_id` | `str` | Business ID (e.g., PAT123456). |
+| `name` | `str` | Patient's full name. |
+| `email` | `EmailStr` | Patient's email. |
+| `username` | `str` | Patient's username. |
+| `is_onboarded` | `bool` | Whether patient completed profile. |
+| `created_at` | `datetime` | Account creation date. |
+| `date_of_birth` | `date` | Patient's date of birth. |
+| `gender` | `str` | Patient's gender. |
+| `phone_number` | `str` | Patient's phone number. |
+| `address` | `str` | Patient's address. |
+| `blood_group` | `str` | Blood type (optional). |
+| `height_cm` | `float` | Height in centimeters (optional). |
+| `weight_kg` | `float` | Weight in kilograms (optional). |
+| `allergies` | `list[str]` | List of allergies (optional). |
+| `current_medications` | `list[str]` | Current medications (optional). |
+| `medical_history` | `list[str]` | Medical history (optional). |
+| `emergency_contact_name` | `str` | Emergency contact name. |
+| `emergency_contact_phone` | `str` | Emergency contact phone. |
+
+---
+
 ### **`DoctorSummary`**
 Lightweight representation of a doctor for list views.
 
@@ -403,6 +473,36 @@ const fetchMyPatients = async () => {
   // - Sort is already handled by API (most recent first)
 };
 
+// Get patient details by email
+const getPatientByEmail = async (email: string) => {
+  try {
+    const patient = await api.get(`/assignments/get-my-patient/${encodeURIComponent(email)}`);
+    
+    // Display complete patient profile:
+    // - Basic info: name, email, date of birth, gender
+    // - Contact: phone, address
+    // - Medical: blood group, height, weight, allergies, medications
+    // - Emergency contact information
+    
+    return patient;
+  } catch (error) {
+    if (error.status === 404) {
+      // Patient not found or not assigned to this doctor
+      showError("Patient not found or not assigned to you");
+    }
+  }
+};
+
+// Example: Search patient by email before creating a case
+const searchAndCreateCase = async (patientEmail: string) => {
+  const patient = await getPatientByEmail(patientEmail);
+  
+  if (patient) {
+    // Pre-fill case creation form with patient data
+    navigateTo(`/cases/create?patient_id=${patient.user_id}`);
+  }
+};
+
 // Example of rendering patient history
 const renderPatientHistory = (history) => {
   return history.map(patient => (
@@ -508,4 +608,4 @@ The assignments module triggers notifications for:
 - **Patient**: When a new doctor is assigned (`notify_doctor_assigned`).
 - **Doctor**: When a new patient is assigned (handled via cases module).
 
-See [NOTIFICATIONS.md](NOTIFICATIONS.md) for polling and display details.
+See [notifications.md](NOTIDICATIONS.md) for polling and display details.

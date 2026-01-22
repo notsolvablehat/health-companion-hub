@@ -57,6 +57,8 @@ import {
 import { getInitials, formatDate, calculateAge } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { PatientSummary, PatientHistoryEntry } from '@/types/assignment';
+import { PatientProfileDialog } from '@/components/profile/PatientProfileDialog';
+
 
 function PatientCard({ 
   patient, 
@@ -69,7 +71,7 @@ function PatientCard({
   isHistory?: boolean;
   historyData?: PatientHistoryEntry;
   onRevoke?: (email: string) => void;
-  onViewProfile?: (patientId: string) => void;
+  onViewProfile?: (email: string) => void;
 }) {
   const initials = getInitials(patient.name?.split(' ')[0], patient.name?.split(' ')[1] || '');
   const age = patient.date_of_birth ? calculateAge(patient.date_of_birth) : null;
@@ -134,7 +136,7 @@ function PatientCard({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onViewProfile?.(patient.user_id)}
+                  onClick={() => onViewProfile?.(patient.email!)}
                 >
                   <Eye className="w-4 h-4 mr-1" />
                   View Profile
@@ -286,6 +288,10 @@ export default function DoctorBookings() {
   const navigate = useNavigate();
   const { data, isLoading, error, refetch } = useMyPatients();
   const revokeMutation = useRevokeAssignment();
+  
+  // State for patient profile dialog
+  const [selectedPatientEmail, setSelectedPatientEmail] = useState<string | null>(null);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
 
   const activePatients = data?.patients || [];
   const historyPatients = data?.history || [];
@@ -303,8 +309,9 @@ export default function DoctorBookings() {
     }
   };
 
-  const handleViewProfile = (patientId: string) => {
-    navigate(`/doctor/patients/${patientId}`);
+  const handleViewProfile = (email: string) => {
+    setSelectedPatientEmail(email);
+    setProfileDialogOpen(true);
   };
 
   if (error) {
@@ -403,6 +410,16 @@ export default function DoctorBookings() {
           )}
         </TabsContent>
       </Tabs>
+      
+      {/* Patient Profile Dialog */}
+      {selectedPatientEmail && (
+        <PatientProfileDialog
+          open={profileDialogOpen}
+          onOpenChange={setProfileDialogOpen}
+          patientEmail={selectedPatientEmail}
+        />
+      )}
     </div>
   );
 }
+

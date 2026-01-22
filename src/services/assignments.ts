@@ -59,11 +59,11 @@ export const assignmentsService = {
   },
 
   /**
-   * Get full patient profile (Doctor only - must be assigned)
-   * GET /users/patient-profile/:patient_id
+   * Get full patient details by email (Doctor only - must be assigned)
+   * GET /assignments/get-my-patient/{email}
    */
-  getPatientProfile: async (patientId: string): Promise<PatientProfile> => {
-    const response = await api.get<PatientProfile>(`/users/patient-profile/${patientId}`);
+  getPatientByEmail: async (email: string): Promise<PatientProfile> => {
+    const response = await api.get<PatientProfile>(`/assignments/get-my-patient/${encodeURIComponent(email)}`);
     return response.data;
   },
 };

@@ -40,16 +40,20 @@ export {
   useUploadReport,
   useDownloadReport,
   usePrefetchReport,
+  useReportDownloadUrl,
+  useDoctorReports,
+  useReportAnalysis,
 } from './useReportQueries';
 
 // Assignments
 export {
   useMyPatients,
   useMyDoctors,
-  usePatientProfile,
+  usePatientProfileByEmail,
   useAssignPatient,
   useRevokeAssignment,
   usePrefetchPatientProfile,
+  useSpecialities,
 } from './useAssignmentQueries';
 
 // AI
@@ -65,4 +69,5 @@ export {
   useSummarizeCase,
   usePatientInsights,
   usePrefetchChat,
+  useExplainText,
 } from './useAIQueries';

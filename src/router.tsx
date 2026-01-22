@@ -15,13 +15,13 @@ import Onboarding from '@/pages/auth/Onboarding';
 import PatientDashboard from '@/pages/patient/Dashboard';
 import PatientCases from '@/pages/patient/Cases';
 import PatientCaseDetail from '@/pages/patient/CaseDetail';
-import PatientReports from '@/pages/patient/Reports';
+import PatientReportInsights from '@/pages/patient/ReportInsights';
 import PatientBookings from '@/pages/patient/Bookings';
 import PatientChat from '@/pages/patient/Chat';
 
 // Doctor Pages
 import DoctorDashboard from '@/pages/doctor/Dashboard';
-import DoctorPatients from '@/pages/doctor/Patients';
+import DoctorReportInsights from '@/pages/doctor/ReportInsights';
 import DoctorPatientDetail from '@/pages/doctor/PatientDetail';
 import DoctorCases from '@/pages/doctor/Cases';
 import DoctorCaseReview from '@/pages/doctor/CaseReview';
@@ -87,7 +87,7 @@ export const router = createBrowserRouter([
               },
               {
                 path: '/patient/reports',
-                element: <PatientReports />,
+                element: <PatientReportInsights />,
               },
               {
                 path: '/patient/bookings',
@@ -126,8 +126,8 @@ export const router = createBrowserRouter([
                 element: <DoctorDashboard />,
               },
               {
-                path: '/doctor/patients',
-                element: <DoctorPatients />,
+                path: '/doctor/reports',
+                element: <DoctorReportInsights />,
               },
               {
                 path: '/doctor/patients/:patientId',

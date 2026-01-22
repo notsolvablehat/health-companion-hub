@@ -3,12 +3,10 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
   FileText,
-  Upload,
-  Users,
   MessageSquare,
-  Settings,
   ClipboardList,
   CalendarCheck,
+  Sparkles,
 } from 'lucide-react';
 import type { UserRole } from '@/types/auth';
 
@@ -21,14 +19,14 @@ interface NavItem {
 const patientNavItems: NavItem[] = [
   { label: 'Home', href: '/patient/dashboard', icon: LayoutDashboard },
   { label: 'Cases', href: '/patient/cases', icon: FileText },
-  { label: 'Reports', href: '/patient/reports', icon: Upload },
+  { label: 'Insights', href: '/patient/reports', icon: Sparkles },
   { label: 'Bookings', href: '/patient/bookings', icon: CalendarCheck },
   { label: 'Chat', href: '/patient/chat', icon: MessageSquare },
 ];
 
 const doctorNavItems: NavItem[] = [
   { label: 'Home', href: '/doctor/dashboard', icon: LayoutDashboard },
-  { label: 'Patients', href: '/doctor/patients', icon: Users },
+  { label: 'Insights', href: '/doctor/reports', icon: Sparkles },
   { label: 'Cases', href: '/doctor/cases', icon: ClipboardList },
   { label: 'Bookings', href: '/doctor/bookings', icon: CalendarCheck },
   { label: 'Chat', href: '/doctor/chat', icon: MessageSquare },

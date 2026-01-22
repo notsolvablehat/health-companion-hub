@@ -42,13 +42,13 @@ export function useMyDoctors() {
 }
 
 /**
- * Hook to get patient profile (Doctor only)
+ * Hook to get patient profile by email (Doctor only)
  */
-export function usePatientProfile(patientId: string | undefined) {
+export function usePatientProfileByEmail(email: string | undefined) {
   return useQuery({
-    queryKey: ['patientProfile', patientId],
-    queryFn: () => assignmentsService.getPatientProfile(patientId!),
-    enabled: !!patientId,
+    queryKey: ['patientProfile', email],
+    queryFn: () => assignmentsService.getPatientByEmail(email!),
+    enabled: !!email,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -84,15 +84,15 @@ export function useRevokeAssignment() {
 }
 
 /**
- * Hook to prefetch patient profile
+ * Hook to prefetch patient profile by email
  */
 export function usePrefetchPatientProfile() {
   const queryClient = useQueryClient();
 
-  return (patientId: string) => {
+  return (email: string) => {
     queryClient.prefetchQuery({
-      queryKey: ['patientProfile', patientId],
-      queryFn: () => assignmentsService.getPatientProfile(patientId),
+      queryKey: ['patientProfile', email],
+      queryFn: () => assignmentsService.getPatientByEmail(email),
       staleTime: 5 * 60 * 1000,
     });
   };

@@ -1,6 +1,7 @@
 // src/hooks/queries/useAIQueries.ts
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useRef, useCallback } from 'react';
 import { aiService } from '@/services';
 import { QUERY_KEYS } from '@/lib/constants';
 import type {
@@ -207,5 +208,42 @@ export function usePrefetchChat() {
       queryFn: () => aiService.getChatHistory(chatId),
       staleTime: 30 * 1000,
     });
+  };
+}
+
+/**
+ * Hook to explain selected text from a report using chat system
+ */
+export function useExplainText(reportId: string) {
+  const chatIdRef = useRef<string | null>(null);
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: async (selectedText: string) => {
+      // Create or reuse chat session
+      if (!chatIdRef.current) {
+        setIsCreatingChat(true);
+        const chat = await aiService.startChat({ report_ids: [reportId] });
+        chatIdRef.current = chat.chat_id;
+        setIsCreatingChat(false);
+      }
+
+      // Send explanation request
+      const response = await aiService.sendMessage(chatIdRef.current, {
+        message: `Please explain this medical term or finding from the report: "${selectedText}". Provide a clear, concise explanation suitable for a healthcare professional, including normal ranges if applicable.`,
+      });
+
+      return response;
+    },
+  });
+
+  const reset = useCallback(() => {
+    chatIdRef.current = null;
+  }, []);
+
+  return {
+    ...mutation,
+    isCreatingChat,
+    reset,
   };
 }

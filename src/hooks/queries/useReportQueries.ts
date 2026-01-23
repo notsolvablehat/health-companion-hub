@@ -182,47 +182,68 @@ export function useDoctorReports() {
 }
 
 /**
- * Hook to manage report analysis state and trigger analysis
+ * Hook to get analysis status for a report
  */
-export function useReportAnalysis(reportId: string) {
+export function useAnalysisStatus(reportId: string) {
+  return useQuery({
+    queryKey: ['analysis-status', reportId],
+    queryFn: () => aiService.getAnalysisStatus(reportId),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+}
+
+/**
+ * Hook to get all analysis versions for a report
+ */
+export function useAnalysisList(reportId: string) {
+  return useQuery({
+    queryKey: ['analysis-list', reportId],
+    queryFn: () => aiService.getAnalysisList(reportId),
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
+}
+
+/**
+ * Hook to get specific analysis detail
+ */
+export function useAnalysisDetail(reportId: string, mongoId: string | null) {
+  return useQuery({
+    queryKey: ['analysis-detail', reportId, mongoId],
+    queryFn: () => aiService.getAnalysisDetail(reportId, mongoId!),
+    enabled: !!mongoId,
+    staleTime: 5 * 60 * 1000, // 5 minutes - analysis results don't change
+  });
+}
+
+/**
+ * Hook to trigger new analysis (with optional re-analysis)
+ */
+export function useAnalyzeReport(reportId: string) {
   const queryClient = useQueryClient();
 
-  // Check if report is already analyzed (from cache or localStorage)
-  const { data: cachedAnalysis } = useQuery({
-    queryKey: ['report-analysis', reportId],
-    queryFn: (): ReportAnalysisCache | null => {
-      const cached = localStorage.getItem(`analysis-${reportId}`);
-      return cached ? JSON.parse(cached) : null;
+  return useMutation({
+    mutationKey: ['analyze-report', reportId],
+    mutationFn: async ({ analyzeAgain = false }: { analyzeAgain?: boolean }) => {
+      // The analyze endpoint handles both extraction and analysis
+      const result = await aiService.analyzeReport(reportId, analyzeAgain);
+      return result;
     },
-    staleTime: Infinity,
-  });
-
-  // Mutation to trigger new analysis
-  const analyzeMutation = useMutation({
-    mutationFn: async (): Promise<ReportAnalysisCache> => {
-      const [extraction, analysis] = await Promise.all([
-        aiService.extractReport(reportId),
-        aiService.analyzeReport(reportId),
-      ]);
-
-      return {
-        extraction,
-        analysis,
-        analyzedAt: new Date().toISOString(),
-      };
-    },
-    onSuccess: (data) => {
-      // Cache the result
-      localStorage.setItem(`analysis-${reportId}`, JSON.stringify(data));
-      queryClient.setQueryData(['report-analysis', reportId], data);
+    onSuccess: () => {
+      // Invalidate all analysis-related queries
+      queryClient.invalidateQueries({ queryKey: ['analysis-status', reportId] });
+      queryClient.invalidateQueries({ queryKey: ['analysis-list', reportId] });
+      queryClient.invalidateQueries({ queryKey: ['analysis-detail', reportId] });
     },
   });
+}
 
-  return {
-    analysis: cachedAnalysis,
-    isAnalyzed: !!cachedAnalysis,
-    analyze: analyzeMutation.mutate,
-    isAnalyzing: analyzeMutation.isPending,
-    error: analyzeMutation.error,
-  };
+/**
+ * Hook to get report activity history
+ */
+export function useReportActivity(reportId: string) {
+  return useQuery({
+    queryKey: ['report-activity', reportId],
+    queryFn: () => reportsService.getReportActivity(reportId),
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
 }

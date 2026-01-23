@@ -42,7 +42,11 @@ export {
   usePrefetchReport,
   useReportDownloadUrl,
   useDoctorReports,
-  useReportAnalysis,
+  useReportActivity,
+  useAnalysisStatus,
+  useAnalysisList,
+  useAnalysisDetail,
+  useAnalyzeReport,
 } from './useReportQueries';
 
 // Assignments
@@ -65,7 +69,6 @@ export {
   useDeleteChat,
   useUpdateChatReports,
   useExtractReport,
-  useAnalyzeReport,
   useSummarizeCase,
   usePatientInsights,
   usePrefetchChat,

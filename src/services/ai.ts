@@ -15,6 +15,11 @@ import type {
   SummarizeCaseResponse,
   PatientInsightsResponse,
 } from '@/types/ai';
+import type {
+  AnalysisStatusResponse,
+  AnalysisListResponse,
+  AnalysisDetail,
+} from '@/types/report';
 
 export const aiService = {
   // ============ CHAT ============
@@ -80,19 +85,53 @@ export const aiService = {
   /**
    * Extract medical data from a report (TF-IDF + Gemini)
    */
-  extractReport: async (reportId: string): Promise<ExtractReportResponse> => {
+  extractReport: async (reportId: string, analyzeAgain = false): Promise<ExtractReportResponse> => {
     const response = await api.post<ExtractReportResponse>(
-      `/ai/extract-report/${reportId}`
+      `/ai/extract-report/${reportId}`,
+      {},
+      { params: { analyze_again: analyzeAgain } }
     );
     return response.data;
   },
 
   /**
-   * Analyze report with XGBoost diabetes prediction (Legacy)
+   * Analyze report with XGBoost diabetes prediction
    */
-  analyzeReport: async (reportId: string): Promise<AnalyzeReportResponse> => {
+  analyzeReport: async (reportId: string, analyzeAgain = false): Promise<AnalyzeReportResponse> => {
     const response = await api.post<AnalyzeReportResponse>(
-      `/ai/analyze-report/${reportId}`
+      `/ai/analyze-report/${reportId}`,
+      {},
+      { params: { analyze_again: analyzeAgain } }
+    );
+    return response.data;
+  },
+
+  /**
+   * Get analysis status for a report
+   */
+  getAnalysisStatus: async (reportId: string): Promise<AnalysisStatusResponse> => {
+    const response = await api.get<AnalysisStatusResponse>(
+      `/reports/${reportId}/analysis-status`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get all analysis versions for a report
+   */
+  getAnalysisList: async (reportId: string): Promise<AnalysisListResponse> => {
+    const response = await api.get<AnalysisListResponse>(
+      `/reports/${reportId}/analyses`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get specific analysis detail by mongo_id
+   */
+  getAnalysisDetail: async (reportId: string, mongoId: string): Promise<AnalysisDetail> => {
+    const response = await api.get<AnalysisDetail>(
+      `/reports/${reportId}/analyses/${mongoId}`
     );
     return response.data;
   },

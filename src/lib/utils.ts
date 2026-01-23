@@ -28,23 +28,40 @@ export function parseBackendDate(dateString: string | undefined | null): Date | 
  * Format date to readable string
  */
 export function formatDate(
-  date: string | Date,
+  date: string | Date | null | undefined,
   options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
   }
 ): string {
-  return new Date(date).toLocaleDateString('en-US', options);
+  if (!date) return 'N/A';
+  
+  // Use parseBackendDate for string dates to handle UTC properly
+  const parsedDate = typeof date === 'string' ? parseBackendDate(date) : date;
+  if (!parsedDate) return 'N/A';
+  
+  return parsedDate.toLocaleDateString('en-US', options);
 }
 
 /**
  * Format date to relative time (e.g., "2 hours ago")
  */
-export function formatRelativeTime(date: string | Date): string {
+export function formatRelativeTime(date: string | Date | null | undefined): string {
+  if (!date) return 'Unknown';
+  
   const now = new Date();
-  const then = new Date(date);
+  
+  // Use parseBackendDate for string dates to handle UTC properly
+  const then = typeof date === 'string' ? parseBackendDate(date) : date;
+  if (!then) return 'Unknown';
+  
   const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
+
+  // Handle future dates
+  if (seconds < 0) {
+    return 'Just now';
+  }
 
   const intervals = [
     { label: 'year', seconds: 31536000 },

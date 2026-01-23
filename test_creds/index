@@ -12,3 +12,11 @@ dr.jones@healthcare.com / Doctor123!
 dr.williams@healthcare.com / Doctor123!
 dr.brown@healthcare.com / Doctor123!
 ============================
+
+
+# Use this for testing:
+
+patient: jenevamth@gmail.com / jenevanth
+doctor: darshan@gmail.com / darshan
+
+frontend is running on localhost:8080

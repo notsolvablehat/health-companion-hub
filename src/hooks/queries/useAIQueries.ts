@@ -212,38 +212,30 @@ export function usePrefetchChat() {
 }
 
 /**
- * Hook to explain selected text from a report using chat system
+ * Hook to explain selected text from a report using ephemeral chat
  */
 export function useExplainText(reportId: string) {
-  const chatIdRef = useRef<string | null>(null);
-  const [isCreatingChat, setIsCreatingChat] = useState(false);
-
-  const mutation = useMutation({
+  return useMutation({
     mutationFn: async (selectedText: string) => {
-      // Create or reuse chat session
-      if (!chatIdRef.current) {
-        setIsCreatingChat(true);
-        const chat = await aiService.startChat({ report_ids: [reportId] });
-        chatIdRef.current = chat.chat_id;
-        setIsCreatingChat(false);
+      // Create ephemeral chat session
+      const chat = await aiService.startChat({ report_ids: [reportId] });
+      
+      try {
+        // Send explanation request
+        const response = await aiService.sendMessage(chat.chat_id, {
+          message: `Please explain this medical term or finding from the report: "${selectedText}". Provide a clear, concise explanation suitable for a healthcare professional, including normal ranges if applicable.`,
+        });
+        
+        return response;
+      } finally {
+        // Always cleanup: delete the ephemeral chat
+        try {
+          await aiService.deleteChat(chat.chat_id);
+        } catch (error) {
+          // Silently fail if chat deletion fails - response is already received
+          console.warn('Failed to delete ephemeral chat:', error);
+        }
       }
-
-      // Send explanation request
-      const response = await aiService.sendMessage(chatIdRef.current, {
-        message: `Please explain this medical term or finding from the report: "${selectedText}". Provide a clear, concise explanation suitable for a healthcare professional, including normal ranges if applicable.`,
-      });
-
-      return response;
     },
   });
-
-  const reset = useCallback(() => {
-    chatIdRef.current = null;
-  }, []);
-
-  return {
-    ...mutation,
-    isCreatingChat,
-    reset,
-  };
 }

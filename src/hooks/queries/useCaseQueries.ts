@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { casesService } from '@/services';
+import { useAuth } from '@/contexts/AuthContext';
 import { QUERY_KEYS } from '@/lib/constants';
 import type {
   CaseCreate,
@@ -69,6 +70,32 @@ export function useCaseNotes(caseId: string | undefined) {
     queryFn: () => casesService.getNotes(caseId!),
     enabled: !!caseId,
     staleTime: 1 * 60 * 1000,
+  });
+}
+
+/**
+ * Hook to get all cases for the current user
+ */
+export function useCases() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: [...QUERY_KEYS.CASES, 'my-cases', user?.id],
+    queryFn: async () => {
+      // Return empty list if no user or ID
+      if (!user?.id) return { cases: [], total: 0 };
+      
+      // Fetch cases based on role
+      if (user.role === 'doctor') {
+        return casesService.listDoctorCases(user.id);
+      } else {
+        // Patient
+        return casesService.listPatientCases(user.id);
+      }
+    },
+    // Only fetch when we have a user ID
+    enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000,
   });
 }
 

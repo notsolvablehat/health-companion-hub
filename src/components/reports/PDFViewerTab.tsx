@@ -1,12 +1,14 @@
 // src/components/reports/PDFViewerTab.tsx
 
 import { useState, useCallback } from 'react';
-import { Viewer, Worker, SpecialZoomLevel } from '@react-pdf-viewer/core';
+import { Viewer, Worker } from '@react-pdf-viewer/core';
+import { zoomPlugin } from '@react-pdf-viewer/zoom';
 import '@react-pdf-viewer/core/lib/styles/index.css';
+import '@react-pdf-viewer/zoom/lib/styles/index.css';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Download, ZoomIn, ZoomOut, Loader2, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import { Download, ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon, Loader2, AlertCircle, Image as ImageIcon } from 'lucide-react';
 import { TextSelectionMenu } from './TextSelectionMenu';
 import { ExplainModal } from './ExplainModal';
 import { useReportDownloadUrl } from '@/hooks/queries/useReportQueries';
@@ -17,10 +19,13 @@ interface PDFViewerTabProps {
 }
 
 export function PDFViewerTab({ report }: PDFViewerTabProps) {
-  const [scale, setScale] = useState<number | SpecialZoomLevel>(1.0);
   const [selectedText, setSelectedText] = useState<string>('');
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const [showExplainModal, setShowExplainModal] = useState(false);
+
+  // Initialize zoom plugin
+  const zoomPluginInstance = zoomPlugin();
+  const { ZoomIn, ZoomOut, CurrentScale } = zoomPluginInstance;
 
   const { data: downloadData, isLoading, error } = useReportDownloadUrl(report.id);
 
@@ -53,14 +58,6 @@ export function PDFViewerTab({ report }: PDFViewerTabProps) {
     if (downloadData?.download_url) {
       window.open(downloadData.download_url, '_blank');
     }
-  };
-
-  const handleZoomIn = () => {
-    setScale(prev => typeof prev === 'number' ? Math.min(2.0, prev + 0.1) : 1.1);
-  };
-
-  const handleZoomOut = () => {
-    setScale(prev => typeof prev === 'number' ? Math.max(0.5, prev - 0.1) : 0.9);
   };
 
   if (isLoading) {
@@ -118,23 +115,27 @@ export function PDFViewerTab({ report }: PDFViewerTabProps) {
       {/* Controls */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleZoomOut}
-          >
-            <ZoomOut className="w-4 h-4" />
-          </Button>
-          <span className="text-sm text-muted-foreground min-w-[60px] text-center">
-            {typeof scale === 'number' ? `${Math.round(scale * 100)}%` : 'Fit'}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleZoomIn}
-          >
-            <ZoomIn className="w-4 h-4" />
-          </Button>
+          <ZoomOut>
+            {(props) => (
+              <Button variant="outline" size="sm" onClick={props.onClick}>
+                <ZoomOutIcon className="w-4 h-4" />
+              </Button>
+            )}
+          </ZoomOut>
+          <CurrentScale>
+            {(props) => (
+              <span className="text-sm text-muted-foreground min-w-[60px] text-center">
+                {`${Math.round(props.scale * 100)}%`}
+              </span>
+            )}
+          </CurrentScale>
+          <ZoomIn>
+            {(props) => (
+              <Button variant="outline" size="sm" onClick={props.onClick}>
+                <ZoomInIcon className="w-4 h-4" />
+              </Button>
+            )}
+          </ZoomIn>
         </div>
 
         <Button variant="outline" size="sm" onClick={handleDownload}>
@@ -149,10 +150,10 @@ export function PDFViewerTab({ report }: PDFViewerTabProps) {
           className="h-[700px] overflow-auto"
           onMouseUp={handleTextSelection}
         >
-          <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
+          <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
             <Viewer
               fileUrl={downloadData.download_url}
-              defaultScale={scale}
+              plugins={[zoomPluginInstance]}
               renderLoader={(percentages: number) => (
                 <div className="flex flex-col items-center justify-center h-full gap-2">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />

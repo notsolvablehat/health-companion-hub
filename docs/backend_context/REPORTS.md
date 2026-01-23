@@ -55,6 +55,82 @@ Table: `reports`
 
 ## 3. API Endpoints
 
+### **Get All My Reports**
+Get all reports for the authenticated user (patients see their own, doctors see all assigned patients' reports).
+
+- **Endpoint**: `GET /reports`
+- **Auth**: Required (Patient or Doctor)
+- **Response (Patient View)**:
+```json
+{
+  "total": 3,
+  "reports": [
+    {
+      "id": "report-uuid-1",
+      "case_id": "CASE20260118ABC123",
+      "patient_id": "patient-uuid-123",
+      "patient_name": "John Doe",
+      "uploaded_by": "patient-uuid-123",
+      "file_name": "lab_results_jan2026.pdf",
+      "file_type": "pdf",
+      "content_type": "application/pdf",
+      "storage_path": "patient-uuid-123/20260121_143022_report1.pdf",
+      "file_size_bytes": 2547812,
+      "description": "Blood test results",
+      "created_at": "2026-01-21T14:30:22Z"
+    }
+  ]
+}
+```
+
+**Response (Doctor View)**:
+```json
+{
+  "total": 15,
+  "reports": [
+    {
+      "id": "report-uuid-1",
+      "case_id": "CASE20260118XYZ456",
+      "patient_id": "patient-uuid-456",
+      "patient_name": "Jane Smith",
+      "uploaded_by": "patient-uuid-456",
+      "file_name": "xray_chest.png",
+      "file_type": "image",
+      "content_type": "image/png",
+      "storage_path": "patient-uuid-456/20260120_100000_report2.png",
+      "file_size_bytes": 1234567,
+      "description": "Chest X-ray",
+      "created_at": "2026-01-20T10:00:00Z"
+    },
+    {
+      "id": "report-uuid-2",
+      "case_id": null,
+      "patient_id": "patient-uuid-789",
+      "patient_name": "Robert Johnson",
+      "uploaded_by": "doctor-uuid-123",
+      "file_name": "prescription.pdf",
+      "file_type": "pdf",
+      "content_type": "application/pdf",
+      "storage_path": "patient-uuid-789/20260119_153000_report3.pdf",
+      "file_size_bytes": 456789,
+      "description": "Monthly prescription",
+      "created_at": "2026-01-19T15:30:00Z"
+    }
+  ]
+}
+```
+
+**Response Fields:**
+- `patient_name`: Patient's full name - included for easy identification (especially useful for doctors viewing multiple patients' reports)
+- Reports are sorted by creation date (most recent first)
+
+**Benefits:**
+- Single API call for all reports
+- No need for N+1 queries to fetch patient names
+- Ready for frontend filtering/searching by patient name
+
+---
+
 ### **Generate Upload URL**
 Request a signed URL for uploading a report directly to Supabase Storage.
 
@@ -300,8 +376,15 @@ Report metadata response.
 | `id` | `str` | Report UUID. |
 | `case_id` | `str` | Linked case ID (nullable). |
 | `patient_id` | `str` | Patient UUID. |
+| `patient_name` | `str` | Patient's full name (nullable). |
 | `uploaded_by` | `str` | Uploader UUID. |
 | `file_name` | `str` | Original filename. |
+| `file_type` | `FileType` | `pdf` or `image`. |
+| `content_type` | `str` | MIME type. |
+| `storage_path` | `str` | Path in storage bucket. |
+| `file_size_bytes` | `int` | File size in bytes (nullable). |
+| `description` | `str` | User description (nullable). |
+| `created_at` | `datetime` | Upload timestamp. |
 | `file_type` | `FileType` | `pdf` or `image`. |
 | `content_type` | `str` | MIME type. |
 | `storage_path` | `str` | Path in storage bucket. |
@@ -413,6 +496,53 @@ const uploadReport = async (file: File, patientId: string, caseId?: string) => {
 
 ### **Viewing Reports**
 ```typescript
+// Get all reports for current user (patient or doctor)
+const fetchMyReports = async () => {
+  const response = await api.get('/reports');
+  
+  // For patients: response.reports contains their own reports
+  // For doctors: response.reports contains all assigned patients' reports
+  
+  // Each report includes patient_name for easy identification
+  return response.reports;
+};
+
+// Example: Group reports by patient (useful for doctors)
+const groupReportsByPatient = (reports) => {
+  const grouped = {};
+  
+  reports.forEach(report => {
+    const patientName = report.patient_name || 'Unknown';
+    if (!grouped[patientName]) {
+      grouped[patientName] = [];
+    }
+    grouped[patientName].push(report);
+  });
+  
+  return grouped;
+};
+
+// Example: Display reports with patient names
+const ReportsListComponent = ({ reports }) => {
+  return (
+    <div>
+      {reports.map(report => (
+        <ReportCard key={report.id}>
+          <div>
+            <h3>{report.file_name}</h3>
+            <p>Patient: {report.patient_name}</p>
+            <p>Uploaded: {formatDate(report.created_at)}</p>
+            <p>{report.description}</p>
+          </div>
+          <button onClick={() => downloadReport(report.id)}>
+            Download
+          </button>
+        </ReportCard>
+      ))}
+    </div>
+  );
+};
+
 // Fetch reports for a case
 const fetchCaseReports = async (caseId: string) => {
   const response = await api.get(`/reports/case/${caseId}`);

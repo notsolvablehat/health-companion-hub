@@ -9,6 +9,7 @@ import type {
   UploadUrlResponse,
   ConfirmUploadRequest,
   DownloadUrlResponse,
+  ReportActivityResponse,
 } from '@/types/report';
 import { FILE_UPLOAD } from '@/lib/constants';
 
@@ -148,6 +149,14 @@ export const reportsService = {
    */
   getDownloadUrl: async (reportId: string): Promise<DownloadUrlResponse> => {
     const response = await api.get<DownloadUrlResponse>(`/reports/${reportId}/download`);
+    return response.data;
+  },
+
+  /**
+   * Get activity history for a report
+   */
+  getReportActivity: async (reportId: string): Promise<ReportActivityResponse> => {
+    const response = await api.get<ReportActivityResponse>(`/reports/${reportId}/activity`);
     return response.data;
   },
 

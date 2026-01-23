@@ -4,10 +4,13 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Search, FileText, CheckCircle, Clock, AlertCircle, Upload } from 'lucide-react';
 import { ReportCard } from './ReportCard';
 import { ReportFilters, type FilterState } from './ReportFilters';
+import { UploadReportDialog } from './UploadReportDialog';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
 import type { Report, ReportListResponse } from '@/types/report';
 
 interface ReportLibraryProps {
@@ -35,7 +38,9 @@ export function ReportLibrary({
     fileType: 'all',
     analysisStatus: 'all',
   });
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
 
+  const queryClient = useQueryClient();
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   // Filter and search reports
@@ -47,7 +52,7 @@ export function ReportLibrary({
       const searchLower = debouncedSearch.toLowerCase();
       const matchesSearch = 
         !debouncedSearch ||
-        report.file_name.toLowerCase().includes(searchLower) ||
+        report.file_name?.toLowerCase().includes(searchLower) ||
         report.description?.toLowerCase().includes(searchLower) ||
         report.patient_name?.toLowerCase().includes(searchLower);
 
@@ -123,9 +128,15 @@ export function ReportLibrary({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">{title}</h1>
-        <p className="text-muted-foreground">{subtitle}</p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{title}</h1>
+          <p className="text-muted-foreground">{subtitle}</p>
+        </div>
+        <Button onClick={() => setShowUploadDialog(true)}>
+          <Upload className="w-4 h-4 mr-2" />
+          Upload Report
+        </Button>
       </div>
 
       {/* Search */}
@@ -213,6 +224,17 @@ export function ReportLibrary({
           </div>
         )}
       </div>
+
+      {/* Upload Dialog */}
+      <UploadReportDialog
+        open={showUploadDialog}
+        onClose={() => setShowUploadDialog(false)}
+        onSuccess={() => {
+          // Invalidate queries to refresh report list
+          queryClient.invalidateQueries({ queryKey: ['doctor-reports'] });
+          queryClient.invalidateQueries({ queryKey: ['reports'] });
+        }}
+      />
     </div>
   );
 }

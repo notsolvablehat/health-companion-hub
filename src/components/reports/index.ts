@@ -9,5 +9,6 @@ export { AIInsightsTab } from './AIInsightsTab';
 export { HistoryTab } from './HistoryTab';
 export { TextSelectionMenu } from './TextSelectionMenu';
 export { ExplainModal } from './ExplainModal';
+export { UploadReportDialog } from './UploadReportDialog';
 
 export type { FilterState } from './ReportFilters';

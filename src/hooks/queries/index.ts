@@ -74,3 +74,14 @@ export {
   usePrefetchChat,
   useExplainText,
 } from './useAIQueries';
+
+// Chat (new dedicated module)
+export {
+  useChats as useChatList,
+  useChatHistory,
+  useStartChat as useCreateChat,
+  useSendMessage as useSendChatMessage,
+  useDeleteChat as useRemoveChat,
+  useUpdateChatReports as useModifyChatReports,
+  usePrefetchChat as usePrefetchChatHistory,
+} from './useChatQueries';

@@ -1,114 +1,103 @@
 # Hospital Navigation & Service Directory - Implementation Plan
 
 ## Objective
-To implement a navigation system that helps patients find their way around the hospital, locate specific departments, and access service information.
+To implement an interactive Digital Hospital Map and Service Directory to guide patients within the hospital. This feature will allow users to view floor plans, locate departments, finds amenities, and search for services.
 
-## 1. Core Features
+## 1. Chosen Data Model (St. Gemini General Hospital)
+We have selected the **St. Gemini General Hospital** data model for its hierarchical structure (`Hospital -> Floors -> Locations`) which aligns perfectly with a map interface.
 
-### A. Digital Hospital Map
-- **Interactive Floor Plans:** Toggle between different floors (Ground, 1st, 2nd, etc.).
-- **Points of Interest (POIs):** Markers for Departments, Wards, Restrooms, Cafeteria, Pharmacy, Elevators, and Exits.
-- **User Interaction:** Click on a marker to see details (opening hours, services).
+### Schema Structure
+```typescript
+interface HospitalData {
+  hospitalName: string;
+  metadata: {
+    totalFloors: number;
+    coordinateSystem: string; // e.g., "cartesian-1000" (0-1000 scale)
+    lastUpdated: string;
+  };
+  categories: Category[]; // Definitions for icons/legend
+  floors: Floor[];
+}
 
-### B. Service Directory
-- **Searchable List:** Filter departments and services by name or category.
-- **Detailed Information:** Phone numbers, head of department, operating hours.
-- **Quick Actions:** "Show on Map" button.
+interface Category {
+  id: string; // e.g., "dept", "restroom"
+  name: string;
+  icon: string; // Lucide icon name
+}
 
-### C. Basic Wayfinding (Directions)
-- **Static Directions:** "How to get here" text descriptions from main entrance.
-- **Visual Path:** (MVP) Highlight the destination node on the map. (Advanced) Draw a line from Entry to Destination.
+interface Floor {
+  id: string; // "F1"
+  name: string; // "Ground Floor"
+  level: number; // 0
+  mapImageUrl: string; // URL to SVG/Image
+  locations: Location[];
+}
+
+interface Location {
+  id: string;
+  name: string;
+  categoryId: string; // FK to Category
+  coordinates: { x: number; y: number }; // 0-1000
+  isNavigable: boolean;
+  details?: {
+    headOfDept?: string;
+    phone?: string;
+    openingHours?: string;
+    services?: string[];
+    description?: string;
+  };
+}
+```
 
 ---
 
-## 2. Technical Design
+## 2. Core Features
 
-### Data Model (JSON/Database)
+### A. Hospital Map
+- **Floor Switcher**: Tabs/Dropdown to switch between floors.
+- **Interactive Map**: Zoomable/Pannable canvas (using `react-zoom-pan-pinch`).
+- **Markers**: Icons plotted on the map based on coordinates.
+- **Location Details**: Clicking a marker opens a sheet/dialog with info (phone, hours, etc.).
 
-Even for MVP, we should structure the data properly.
-
-**1. `floors`**
-```json
-[
-  { "id": "g", "name": "Ground Floor", "map_url": "/maps/ground_floor.svg", "level": 0 },
-  { "id": "1", "name": "First Floor", "map_url": "/maps/first_floor.svg", "level": 1 }
-]
-```
-
-**2. `locations` (Nodes)**
-```json
-[
-  {
-    "id": "reception",
-    "name": "Main Reception",
-    "type": "poi",
-    "category": "admin",
-    "floor_id": "g",
-    "coordinates": { "x": 50, "y": 80 }, // Percentage or pixels
-    "description": "General enquiries and registration."
-  },
-  {
-    "id": "cardio_dept",
-    "name": "Cardiology Department",
-    "type": "department",
-    "category": "medical",
-    "floor_id": "1",
-    "coordinates": { "x": 30, "y": 40 },
-    "phone": "+1234567890",
-    "hours": "9:00 AM - 5:00 PM"
-  }
-]
-```
-
-### Frontend Components
-
-1.  **`HospitalMap`**:
-    -   Uses a container with `relative` positioning.
-    -   Map image as background or `img`.
-    -   Markers placed absolutely using `%` coordinates for responsiveness.
-    -   `TransformWrapper` (from `react-zoom-pan-pinch`) for zoom/pan interaction.
-
-2.  **`ServiceDirectory`**:
-    -   List layout with search bar.
-    -   Cards for each service.
-
-3.  **`NavigationSidebar`**:
-    -   Controls to switch floors.
-    -   Legend for map icons.
-
-### Backend Requirements
--   **GET /hospital/floors**: Retrieve floor metadata.
--   **GET /hospital/locations**: Retrieve all POIs and departments.
--   *Note:* For initial MVP, we can serve this data from a static JSON file or constants in the frontend if backend changes are restricted, but a database is preferred for scalability.
+### B. Service Directory
+- **Searchable List**: Filter locations by name or category.
+- **Quick Navigation**: "Show on Map" button jumps to the floor and centers the location.
 
 ---
 
 ## 3. Implementation Steps
 
-### Phase 1: Setup & Data (Day 1)
-1.  **Define Types:** Create `src/types/navigation.ts`.
-2.  **Mock Data:** Create `src/lib/mock-map-data.ts` with at least 2 floors and 10 locations.
-3.  **Assets:** Generate or find placeholder floor plan images (SVG/PNG).
+### Phase 1: Setup & Data (Current)
+1.  **Define Types**: Create `src/types/navigation.ts` with the schema above.
+2.  **Asset Generation**: Create placeholder SVG maps for 3 floors.
+3.  **Data File**: Create `src/lib/hospital-data.ts` exporting the selected JSON data.
 
-### Phase 2: Service Directory (Day 1)
-1.  **Component:** Create `ServiceDirectory.tsx`.
-2.  **Search Logic:** Implement fuzzy search for departments.
-3.  **Page:** Create `/patient/navigation` page (or separate tab).
+### Phase 2: Core Components
+1.  **`HospitalMap` Component**:
+    -   Implement `TransformWrapper` and `TransformComponent`.
+    -   Render the active floor's image.
+    -   Render `MapMarker` components absolutely positioned on top.
+2.  **`MapMarker` Component**:
+    -   Render icon based on category.
+    -   Handle click events.
+3.  **`FloorSwitcher` Component**:
+    -   Simple tab interface to change active floor state.
 
-### Phase 3: Interactive Map (Day 2)
-1.  **Library Setup:** Install `react-zoom-pan-pinch` for map interaction.
-2.  **Map Component:** Build `HospitalMap.tsx` rendering basic map image.
-3.  **Markers:** Implement `MapMarker.tsx` and render mostly based on coordinates.
-4.  **Interactivity:** Click marker -> Open Drawer/Dialog with details.
+### Phase 3: Service Directory & Integration
+1.  **`ServiceDirectory` Component**:
+    -   List view with search/filter.
+    -   Link to map view (pass `floorId` and `locationId` via state/props).
+2.  **Page Layout**:
+    -   Create `/patient/navigation`.
+    -   Split view: Map on Left (or Top on mobile), Directory on Right (or Bottom sheet).
 
-### Phase 4: Integration & Polish (Day 2-3)
-1.  **"Show on Map":** Link Directory items to Map view (auto-switch floor and center map).
-2.  **Responsiveness:** Ensure map works on mobile (touch gestures).
-3.  **Sidebar Update:** Add "Hospital Map" link to Sidebar.
+### Phase 4: Refinement
+1.  **Responsiveness**: Ensure touch gestures work for zoom/pan.
+2.  **category Legend**: Show what icons mean.
 
 ---
 
 ## 4. Dependencies
--   `react-zoom-pan-pinch`: For seamless zooming and panning of floor plans.
--   `lucide-react`: For map icons (Stethoscope, Pizza, Pill, etc.).
--   `framer-motion`: For smooth floor switching transitions.
+-   `react-zoom-pan-pinch`: For map interactions.
+-   `lucide-react`: For icons.
+-   `framer-motion`: For transitions (optional).

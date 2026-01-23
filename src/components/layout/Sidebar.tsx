@@ -12,6 +12,7 @@ import {
   Stethoscope,
   ClipboardList,
   CalendarCheck,
+  Map,
   Sparkles,
   FolderOpen,
 } from 'lucide-react';
@@ -28,6 +29,7 @@ const patientNavItems: NavItem[] = [
   { label: 'My Cases', href: '/patient/cases', icon: FileText },
   { label: 'Reports', href: '/patient/reports', icon: Sparkles },
   { label: 'Documents', href: '/patient/documents', icon: FolderOpen },
+  { label: 'Hospital Map', href: '/patient/navigation', icon: Map },
   { label: 'Appointments', href: '/patient/appointments', icon: CalendarCheck },
   { label: 'My Doctors', href: '/patient/bookings', icon: Users },
   { label: 'AI Chat', href: '/patient/chat', icon: MessageSquare },

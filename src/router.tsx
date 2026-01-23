@@ -21,6 +21,7 @@ import PatientBookings from '@/pages/patient/Bookings';
 import PatientChat from '@/pages/patient/Chat';
 import PatientDiabetesDashboard from '@/pages/patient/DiabetesDashboard';
 import PatientAppointments from '@/pages/patient/Appointments';
+import PatientNavigation from '@/pages/patient/Navigation';
 
 // Doctor Pages
 import DoctorDashboard from '@/pages/doctor/Dashboard';
@@ -108,6 +109,10 @@ export const router = createBrowserRouter([
               {
                 path: '/patient/appointments',
                 element: <PatientAppointments />,
+              },
+              {
+                path: '/patient/navigation',
+                element: <PatientNavigation />,
               },
               {
                 path: '/patient/chat',

@@ -3,7 +3,7 @@ import { Bot, User, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { cn } from '@/lib/utils';
+import { cn, parseBackendDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ChatMessage } from '@/types/chat';
@@ -160,7 +160,7 @@ function MessageBubbleComponent({ message, onSourceClick }: MessageBubbleProps) 
         {/* Timestamp */}
         {timestamp && (
           <p className="text-xs text-muted-foreground px-1">
-            {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
+            {formatDistanceToNow(parseBackendDate(timestamp) || new Date(), { addSuffix: true })}
           </p>
         )}
       </div>

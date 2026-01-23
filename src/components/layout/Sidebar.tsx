@@ -48,9 +48,23 @@ interface SidebarProps {
   isCollapsed?: boolean;
 }
 
+import { useMyDiabetesDashboard } from '@/hooks/queries/useDiabetesQueries';
+
 export function Sidebar({ role, isCollapsed = false }: SidebarProps) {
   const location = useLocation();
-  const navItems = role === 'doctor' ? doctorNavItems : patientNavItems;
+  const { data: diabetesDashboard } = useMyDiabetesDashboard({ enabled: role === 'patient' });
+  
+  // Conditionally add Diabetes Dashboard
+  const navItems = role === 'doctor' 
+    ? doctorNavItems 
+    : [
+        ...patientNavItems,
+        ...(diabetesDashboard?.has_diabetes_data ? [{ 
+          label: 'Diabetes Manager', 
+          href: '/patient/diabetes-dashboard', 
+          icon: Activity 
+        }] : [])
+      ];
   
   // Make bottom nav items role-aware
   const roleAwareBottomNavItems = bottomNavItems.map(item => ({

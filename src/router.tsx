@@ -18,6 +18,7 @@ import PatientCaseDetail from '@/pages/patient/CaseDetail';
 import PatientReportInsights from '@/pages/patient/ReportInsights';
 import PatientBookings from '@/pages/patient/Bookings';
 import PatientChat from '@/pages/patient/Chat';
+import PatientDiabetesDashboard from '@/pages/patient/DiabetesDashboard';
 
 // Doctor Pages
 import DoctorDashboard from '@/pages/doctor/Dashboard';
@@ -88,6 +89,10 @@ export const router = createBrowserRouter([
               {
                 path: '/patient/reports',
                 element: <PatientReportInsights />,
+              },
+              {
+                path: '/patient/diabetes-dashboard',
+                element: <PatientDiabetesDashboard />,
               },
               {
                 path: '/patient/bookings',

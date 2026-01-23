@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { cn } from '@/lib/utils';
+import { cn, parseBackendDate } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import type { Chat } from '@/types/chat';
 
@@ -145,7 +145,7 @@ export function ChatSidebar({
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {chat.message_count ?? 0} messages •{' '}
-                      {formatDistanceToNow(new Date(chat.updated_at), { addSuffix: true })}
+                      {formatDistanceToNow(parseBackendDate(chat.updated_at) || new Date(), { addSuffix: true })}
                     </p>
                   </div>
                   

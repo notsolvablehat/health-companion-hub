@@ -116,6 +116,13 @@ export const QUERY_KEYS = {
   CHATS: ['chats'] as const,
   CHAT_DETAIL: (id: string) => ['chats', id] as const,
   INSIGHTS: (patientId: string) => ['insights', patientId] as const,
+  
+  // Diabetes Dashboard
+  DIABETES_DASHBOARD: ['diabetesDashboard'] as const,
+  PATIENT_DIABETES_DASHBOARD: (patientId: string) => ['diabetesDashboard', patientId] as const,
+  
+  // Analysis Status (for auto-refresh)
+  ANALYSIS_STATUS: (reportId: string) => ['analysisStatus', reportId] as const,
 } as const;
 
 export const ROUTES = {
@@ -130,6 +137,7 @@ export const ROUTES = {
   PATIENT_CASE_DETAIL: (id: string) => `/patient/cases/${id}`,
   PATIENT_REPORTS: '/patient/reports',
   PATIENT_DOCTORS: '/patient/doctors',
+  PATIENT_DIABETES_DASHBOARD: '/patient/diabetes-dashboard',
   PATIENT_CHAT: '/patient/chat',
   PATIENT_CHAT_DETAIL: (id: string) => `/patient/chat/${id}`,
   

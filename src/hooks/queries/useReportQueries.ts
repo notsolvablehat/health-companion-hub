@@ -233,6 +233,9 @@ export function useAnalyzeReport(reportId: string) {
       queryClient.invalidateQueries({ queryKey: ['analysis-status', reportId] });
       queryClient.invalidateQueries({ queryKey: ['analysis-list', reportId] });
       queryClient.invalidateQueries({ queryKey: ['analysis-detail', reportId] });
+      
+      // Invalidate diabetes dashboard to auto-refresh insights
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DIABETES_DASHBOARD });
     },
   });
 }

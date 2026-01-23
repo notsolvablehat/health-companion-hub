@@ -73,7 +73,7 @@ export function NewChatDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageCircle className="h-5 w-5" />
@@ -118,10 +118,10 @@ export function NewChatDialog({
                         onCheckedChange={() => handleToggleReport(report.id)}
                         className="mt-0.5"
                       />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <div className="flex items-center gap-2 min-w-0">
                           <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          <span className="text-sm font-medium truncate">
+                          <span className="text-sm font-medium truncate block">
                             {report.file_name || 'Untitled Report'}
                           </span>
                         </div>

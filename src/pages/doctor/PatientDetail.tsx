@@ -3,13 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChevronLeft, Mail, Phone, Calendar, FileText, Activity, Heart, AlertTriangle } from 'lucide-react';
 import { getInitials, formatDate, calculateAge } from '@/lib/utils';
+import { usePatientDiabetesDashboard } from '@/hooks/queries/useDiabetesQueries';
+import { DiabetesDashboardView } from '@/components/diabetes/DiabetesDashboardView';
+import { EmptyDiabetesState } from '@/components/diabetes/EmptyDiabetesState';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DoctorPatientDetail() {
   const { patientId } = useParams();
+  const { data: diabetesDashboard, isLoading: isLoadingDiabetes } = usePatientDiabetesDashboard(patientId);
 
-  // Mock data
+  // Mock data for patient profile (in real app, use query)
   const patient = {
     id: patientId,
     firstName: 'John',
@@ -42,8 +48,8 @@ export default function DoctorPatientDetail() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Patient Info */}
-        <Card className="lg:col-span-1">
+        {/* Patient Info Sidebar */}
+        <Card className="lg:col-span-1 h-fit">
           <CardContent className="pt-6">
             <div className="text-center">
               <Avatar className="w-20 h-20 mx-auto">
@@ -71,73 +77,102 @@ export default function DoctorPatientDetail() {
           </CardContent>
         </Card>
 
-        {/* Medical Info */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Medical History */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Heart className="w-5 h-5 text-destructive" />
-                Medical History
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {patient.medicalHistory.map((condition, index) => (
-                  <Badge key={index} variant="secondary">{condition}</Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Main Content Area */}
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="cases">Cases</TabsTrigger>
+              {(isLoadingDiabetes || diabetesDashboard?.has_diabetes_data) && (
+                <TabsTrigger value="diabetes">Diabetes</TabsTrigger>
+              )}
+            </TabsList>
 
-          {/* Allergies */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-warning" />
-                Allergies
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {patient.allergies.map((allergy, index) => (
-                  <Badge key={index} variant="destructive" className="bg-warning/10 text-warning border-warning/20">
-                    {allergy}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Cases */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Recent Cases
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {patient.cases.map((caseItem) => (
-                  <div key={caseItem.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <p className="font-medium">{caseItem.title}</p>
-                      <p className="text-sm text-muted-foreground">{formatDate(caseItem.date)}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={caseItem.status === 'open' ? 'default' : 'secondary'}>
-                        {caseItem.status}
-                      </Badge>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/doctor/cases/${caseItem.id}`}>Review</Link>
-                      </Button>
-                    </div>
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-6">
+              {/* Medical History */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-destructive" />
+                    Medical History
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {patient.medicalHistory.map((condition, index) => (
+                      <Badge key={index} variant="secondary">{condition}</Badge>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+
+              {/* Allergies */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-warning" />
+                    Allergies
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {patient.allergies.map((allergy, index) => (
+                      <Badge key={index} variant="destructive" className="bg-warning/10 text-warning border-warning/20">
+                        {allergy}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Cases Tab */}
+            <TabsContent value="cases">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Recent Cases
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {patient.cases.map((caseItem) => (
+                      <div key={caseItem.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <p className="font-medium">{caseItem.title}</p>
+                          <p className="text-sm text-muted-foreground">{formatDate(caseItem.date)}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={caseItem.status === 'open' ? 'default' : 'secondary'}>
+                            {caseItem.status}
+                          </Badge>
+                          <Button variant="outline" size="sm" asChild>
+                            <Link to={`/doctor/cases/${caseItem.id}`}>Review</Link>
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Diabetes Tab */}
+            <TabsContent value="diabetes">
+              {isLoadingDiabetes ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-64 w-full" />
+                  <Skeleton className="h-48 w-full" />
+                </div>
+              ) : diabetesDashboard?.has_diabetes_data ? (
+                <DiabetesDashboardView dashboard={diabetesDashboard} isDoctor />
+              ) : (
+                <EmptyDiabetesState message={diabetesDashboard?.message} />
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

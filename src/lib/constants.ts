@@ -127,6 +127,13 @@ export const QUERY_KEYS = {
   // Appointments
   APPOINTMENTS: ['appointments'] as const,
   MY_APPOINTMENTS: (role: string) => ['appointments', role] as const,
+
+  // Documents
+  DOCUMENTS: ['documents'] as const,
+  UPLOAD_URL: (fileName: string) => ['uploadUrl', fileName] as const,
+
+  // Sharing
+  SHARED_LINKS: ['sharedLinks'] as const,
 } as const;
 
 export const ROUTES = {

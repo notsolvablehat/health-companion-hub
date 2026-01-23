@@ -13,6 +13,7 @@ import {
   ClipboardList,
   CalendarCheck,
   Sparkles,
+  FolderOpen,
 } from 'lucide-react';
 import type { UserRole } from '@/types/auth';
 
@@ -26,6 +27,7 @@ const patientNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/patient/dashboard', icon: LayoutDashboard },
   { label: 'My Cases', href: '/patient/cases', icon: FileText },
   { label: 'Reports', href: '/patient/reports', icon: Sparkles },
+  { label: 'Documents', href: '/patient/documents', icon: FolderOpen },
   { label: 'Appointments', href: '/patient/appointments', icon: CalendarCheck },
   { label: 'My Doctors', href: '/patient/bookings', icon: Users },
   { label: 'AI Chat', href: '/patient/chat', icon: MessageSquare },

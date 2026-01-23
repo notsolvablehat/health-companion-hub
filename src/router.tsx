@@ -16,6 +16,7 @@ import PatientDashboard from '@/pages/patient/Dashboard';
 import PatientCases from '@/pages/patient/Cases';
 import PatientCaseDetail from '@/pages/patient/CaseDetail';
 import PatientReportInsights from '@/pages/patient/ReportInsights';
+import PatientDocuments from '@/pages/patient/Documents';
 import PatientBookings from '@/pages/patient/Bookings';
 import PatientChat from '@/pages/patient/Chat';
 import PatientDiabetesDashboard from '@/pages/patient/DiabetesDashboard';
@@ -91,6 +92,10 @@ export const router = createBrowserRouter([
               {
                 path: '/patient/reports',
                 element: <PatientReportInsights />,
+              },
+              {
+                path: '/patient/documents',
+                element: <PatientDocuments />,
               },
               {
                 path: '/patient/diabetes-dashboard',

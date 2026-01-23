@@ -1,0 +1,741 @@
+[{
+  "hospital": {
+    "name": "St. Mary's Medical Center",
+    "totalFloors": 3,
+    "address": "1234 Healthcare Drive, Medical City, MC 12345"
+  },
+  "departments": [
+    {
+      "id": "dept-001",
+      "name": "Cardiology",
+      "floor": 2,
+      "coordinates": { "x": 150, "y": 200 },
+      "category": "clinical",
+      "description": "Heart and cardiovascular care",
+      "head": "Dr. Sarah Mitchell",
+      "phone": "(555) 123-4501",
+      "hours": {
+        "weekdays": "8:00 AM - 6:00 PM",
+        "saturday": "9:00 AM - 2:00 PM",
+        "sunday": "Closed"
+      }
+    },
+    {
+      "id": "dept-002",
+      "name": "Radiology",
+      "floor": 1,
+      "coordinates": { "x": 320, "y": 180 },
+      "category": "diagnostic",
+      "description": "Medical imaging and diagnostics",
+      "head": "Dr. James Chen",
+      "phone": "(555) 123-4502",
+      "hours": {
+        "weekdays": "7:00 AM - 10:00 PM",
+        "saturday": "8:00 AM - 6:00 PM",
+        "sunday": "9:00 AM - 5:00 PM"
+      }
+    },
+    {
+      "id": "dept-003",
+      "name": "Emergency Department",
+      "floor": 1,
+      "coordinates": { "x": 50, "y": 100 },
+      "category": "emergency",
+      "description": "24/7 emergency medical services",
+      "head": "Dr. Maria Rodriguez",
+      "phone": "(555) 123-4911",
+      "hours": {
+        "weekdays": "24/7",
+        "saturday": "24/7",
+        "sunday": "24/7"
+      }
+    },
+    {
+      "id": "dept-004",
+      "name": "Pediatrics",
+      "floor": 2,
+      "coordinates": { "x": 400, "y": 250 },
+      "category": "clinical",
+      "description": "Children's health and wellness",
+      "head": "Dr. Emily Thompson",
+      "phone": "(555) 123-4503",
+      "hours": {
+        "weekdays": "8:00 AM - 5:00 PM",
+        "saturday": "9:00 AM - 1:00 PM",
+        "sunday": "Closed"
+      }
+    },
+    {
+      "id": "dept-005",
+      "name": "Orthopedics",
+      "floor": 3,
+      "coordinates": { "x": 180, "y": 220 },
+      "category": "clinical",
+      "description": "Bone, joint, and muscle care",
+      "head": "Dr. Robert Kim",
+      "phone": "(555) 123-4504",
+      "hours": {
+        "weekdays": "8:00 AM - 5:00 PM",
+        "saturday": "Closed",
+        "sunday": "Closed"
+      }
+    },
+    {
+      "id": "dept-006",
+      "name": "Laboratory Services",
+      "floor": 1,
+      "coordinates": { "x": 280, "y": 320 },
+      "category": "diagnostic",
+      "description": "Blood work and medical testing",
+      "head": "Dr. Linda Park",
+      "phone": "(555) 123-4505",
+      "hours": {
+        "weekdays": "6:00 AM - 8:00 PM",
+        "saturday": "7:00 AM - 3:00 PM",
+        "sunday": "8:00 AM - 2:00 PM"
+      }
+    },
+    {
+      "id": "dept-007",
+      "name": "Neurology",
+      "floor": 3,
+      "coordinates": { "x": 350, "y": 180 },
+      "category": "clinical",
+      "description": "Brain and nervous system care",
+      "head": "Dr. Michael Anderson",
+      "phone": "(555) 123-4506",
+      "hours": {
+        "weekdays": "8:00 AM - 6:00 PM",
+        "saturday": "Closed",
+        "sunday": "Closed"
+      }
+    },
+    {
+      "id": "dept-008",
+      "name": "Oncology",
+      "floor": 3,
+      "coordinates": { "x": 280, "y": 300 },
+      "category": "clinical",
+      "description": "Cancer treatment and care",
+      "head": "Dr. Patricia Williams",
+      "phone": "(555) 123-4507",
+      "hours": {
+        "weekdays": "7:00 AM - 7:00 PM",
+        "saturday": "8:00 AM - 2:00 PM",
+        "sunday": "Closed"
+      }
+    },
+    {
+      "id": "dept-009",
+      "name": "Pharmacy",
+      "floor": 1,
+      "coordinates": { "x": 180, "y": 80 },
+      "category": "support",
+      "description": "Prescription and medication services",
+      "head": "Dr. Kevin Patel",
+      "phone": "(555) 123-4508",
+      "hours": {
+        "weekdays": "7:00 AM - 9:00 PM",
+        "saturday": "8:00 AM - 6:00 PM",
+        "sunday": "9:00 AM - 5:00 PM"
+      }
+    },
+    {
+      "id": "dept-010",
+      "name": "Surgery",
+      "floor": 2,
+      "coordinates": { "x": 250, "y": 150 },
+      "category": "clinical",
+      "description": "Surgical procedures and care",
+      "head": "Dr. David Lee",
+      "phone": "(555) 123-4509",
+      "hours": {
+        "weekdays": "24/7",
+        "saturday": "24/7",
+        "sunday": "24/7"
+      }
+    }
+  ],
+  "pointsOfInterest": [
+    {
+      "id": "poi-001",
+      "type": "elevator",
+      "name": "Main Elevator A",
+      "floor": 1,
+      "coordinates": { "x": 200, "y": 200 },
+      "accessible": true,
+      "servesFloors": [1, 2, 3]
+    },
+    {
+      "id": "poi-002",
+      "type": "elevator",
+      "name": "Main Elevator B",
+      "floor": 1,
+      "coordinates": { "x": 220, "y": 200 },
+      "accessible": true,
+      "servesFloors": [1, 2, 3]
+    },
+    {
+      "id": "poi-003",
+      "type": "elevator",
+      "name": "Main Elevator A",
+      "floor": 2,
+      "coordinates": { "x": 200, "y": 200 },
+      "accessible": true,
+      "servesFloors": [1, 2, 3]
+    },
+    {
+      "id": "poi-004",
+      "type": "elevator",
+      "name": "Main Elevator B",
+      "floor": 2,
+      "coordinates": { "x": 220, "y": 200 },
+      "accessible": true,
+      "servesFloors": [1, 2, 3]
+    },
+    {
+      "id": "poi-005",
+      "type": "elevator",
+      "name": "Main Elevator A",
+      "floor": 3,
+      "coordinates": { "x": 200, "y": 200 },
+      "accessible": true,
+      "servesFloors": [1, 2, 3]
+    },
+    {
+      "id": "poi-006",
+      "type": "elevator",
+      "name": "Main Elevator B",
+      "floor": 3,
+      "coordinates": { "x": 220, "y": 200 },
+      "accessible": true,
+      "servesFloors": [1, 2, 3]
+    },
+    {
+      "id": "poi-007",
+      "type": "restroom",
+      "name": "Men's Restroom",
+      "floor": 1,
+      "coordinates": { "x": 120, "y": 280 },
+      "accessible": true,
+      "gender": "male"
+    },
+    {
+      "id": "poi-008",
+      "type": "restroom",
+      "name": "Women's Restroom",
+      "floor": 1,
+      "coordinates": { "x": 140, "y": 280 },
+      "accessible": true,
+      "gender": "female"
+    },
+    {
+      "id": "poi-009",
+      "type": "restroom",
+      "name": "Family Restroom",
+      "floor": 1,
+      "coordinates": { "x": 160, "y": 280 },
+      "accessible": true,
+      "gender": "family"
+    },
+    {
+      "id": "poi-010",
+      "type": "restroom",
+      "name": "Men's Restroom",
+      "floor": 2,
+      "coordinates": { "x": 300, "y": 280 },
+      "accessible": true,
+      "gender": "male"
+    },
+    {
+      "id": "poi-011",
+      "type": "restroom",
+      "name": "Women's Restroom",
+      "floor": 2,
+      "coordinates": { "x": 320, "y": 280 },
+      "accessible": true,
+      "gender": "female"
+    },
+    {
+      "id": "poi-012",
+      "type": "restroom",
+      "name": "Men's Restroom",
+      "floor": 3,
+      "coordinates": { "x": 150, "y": 320 },
+      "accessible": true,
+      "gender": "male"
+    },
+    {
+      "id": "poi-013",
+      "type": "restroom",
+      "name": "Women's Restroom",
+      "floor": 3,
+      "coordinates": { "x": 170, "y": 320 },
+      "accessible": true,
+      "gender": "female"
+    },
+    {
+      "id": "poi-014",
+      "type": "exit",
+      "name": "Main Entrance",
+      "floor": 1,
+      "coordinates": { "x": 100, "y": 50 },
+      "accessible": true,
+      "emergency": false
+    },
+    {
+      "id": "poi-015",
+      "type": "exit",
+      "name": "Emergency Exit - East",
+      "floor": 1,
+      "coordinates": { "x": 450, "y": 200 },
+      "accessible": true,
+      "emergency": true
+    },
+    {
+      "id": "poi-016",
+      "type": "exit",
+      "name": "Emergency Exit - West",
+      "floor": 1,
+      "coordinates": { "x": 20, "y": 200 },
+      "accessible": true,
+      "emergency": true
+    },
+    {
+      "id": "poi-017",
+      "type": "exit",
+      "name": "Emergency Exit - East",
+      "floor": 2,
+      "coordinates": { "x": 450, "y": 180 },
+      "accessible": true,
+      "emergency": true
+    },
+    {
+      "id": "poi-018",
+      "type": "exit",
+      "name": "Emergency Exit - West",
+      "floor": 2,
+      "coordinates": { "x": 20, "y": 180 },
+      "accessible": true,
+      "emergency": true
+    },
+    {
+      "id": "poi-019",
+      "type": "exit",
+      "name": "Emergency Exit - East",
+      "floor": 3,
+      "coordinates": { "x": 450, "y": 160 },
+      "accessible": true,
+      "emergency": true
+    },
+    {
+      "id": "poi-020",
+      "type": "exit",
+      "name": "Emergency Exit - West",
+      "floor": 3,
+      "coordinates": { "x": 20, "y": 160 },
+      "accessible": true,
+      "emergency": true
+    },
+    {
+      "id": "poi-021",
+      "type": "cafeteria",
+      "name": "Main Cafeteria",
+      "floor": 1,
+      "coordinates": { "x": 380, "y": 100 },
+      "accessible": true,
+      "hours": {
+        "weekdays": "6:00 AM - 8:00 PM",
+        "saturday": "7:00 AM - 7:00 PM",
+        "sunday": "7:00 AM - 7:00 PM"
+      }
+    },
+    {
+      "id": "poi-022",
+      "type": "waiting-area",
+      "name": "Main Waiting Area",
+      "floor": 1,
+      "coordinates": { "x": 150, "y": 150 },
+      "accessible": true,
+      "seatingCapacity": 50
+    },
+    {
+      "id": "poi-023",
+      "type": "waiting-area",
+      "name": "Floor 2 Waiting Area",
+      "floor": 2,
+      "coordinates": { "x": 180, "y": 120 },
+      "accessible": true,
+      "seatingCapacity": 30
+    },
+    {
+      "id": "poi-024",
+      "type": "waiting-area",
+      "name": "Floor 3 Waiting Area",
+      "floor": 3,
+      "coordinates": { "x": 220, "y": 140 },
+      "accessible": true,
+      "seatingCapacity": 25
+    },
+    {
+      "id": "poi-025",
+      "type": "information-desk",
+      "name": "Main Information Desk",
+      "floor": 1,
+      "coordinates": { "x": 130, "y": 100 },
+      "accessible": true,
+      "phone": "(555) 123-4500"
+    },
+    {
+      "id": "poi-026",
+      "type": "gift-shop",
+      "name": "Hospital Gift Shop",
+      "floor": 1,
+      "coordinates": { "x": 350, "y": 60 },
+      "accessible": true,
+      "hours": {
+        "weekdays": "9:00 AM - 7:00 PM",
+        "saturday": "10:00 AM - 5:00 PM",
+        "sunday": "10:00 AM - 4:00 PM"
+      }
+    },
+    {
+      "id": "poi-027",
+      "type": "chapel",
+      "name": "Interfaith Chapel",
+      "floor": 2,
+      "coordinates": { "x": 100, "y": 300 },
+      "accessible": true,
+      "description": "Open 24/7 for quiet reflection"
+    },
+    {
+      "id": "poi-028",
+      "type": "atm",
+      "name": "ATM",
+      "floor": 1,
+      "coordinates": { "x": 250, "y": 70 },
+      "accessible": true
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2024-01-15",
+    "coordinateSystem": "Cartesian (pixels)",
+    "floorDimensions": {
+      "width": 500,
+      "height": 400
+    }
+  }
+},
+{
+  "hospitalName": "St. Gemini General Hospital",
+  "metadata": {
+    "totalFloors": 3,
+    "coordinateSystem": "cartesian-1000",
+    "lastUpdated": "2023-10-27T10:00:00Z"
+  },
+  "categories": [
+    { "id": "dept", "name": "Medical Department", "icon": "stethoscope" },
+    { "id": "service", "name": "Patient Services", "icon": "info-circle" },
+    { "id": "amenity", "name": "Amenities", "icon": "coffee" },
+    { "id": "restroom", "name": "Restroom", "icon": "restroom" },
+    { "id": "elevator", "name": "Elevator", "icon": "elevator" },
+    { "id": "exit", "name": "Exit/Entrance", "icon": "door-open" }
+  ],
+  "floors": [
+    {
+      "id": "F1",
+      "name": "Ground Floor",
+      "level": 0,
+      "mapImageUrl": "/maps/ground_floor.svg",
+      "locations": [
+        {
+          "id": "loc-101",
+          "name": "Main Entrance",
+          "categoryId": "exit",
+          "coordinates": { "x": 500, "y": 950 },
+          "isNavigable": true
+        },
+        {
+          "id": "loc-102",
+          "name": "Emergency Room (ER)",
+          "categoryId": "dept",
+          "coordinates": { "x": 800, "y": 800 },
+          "isNavigable": true,
+          "details": {
+            "headOfDept": "Dr. Sarah Conner",
+            "phone": "+1-555-0199",
+            "openingHours": "24/7",
+            "services": ["Trauma", "Triage", "Ambulance Bay"]
+          }
+        },
+        {
+          "id": "loc-103",
+          "name": "Radiology & Imaging",
+          "categoryId": "dept",
+          "coordinates": { "x": 200, "y": 750 },
+          "isNavigable": true,
+          "details": {
+            "headOfDept": "Dr. Roentgen",
+            "phone": "+1-555-0123",
+            "openingHours": "08:00 - 20:00",
+            "services": ["X-Ray", "MRI", "CT Scan"]
+          }
+        },
+        {
+          "id": "loc-104",
+          "name": "Central Pharmacy",
+          "categoryId": "service",
+          "coordinates": { "x": 400, "y": 600 },
+          "isNavigable": true,
+          "details": {
+            "openingHours": "24/7"
+          }
+        },
+        {
+          "id": "loc-105",
+          "name": "Elevator Bank A",
+          "categoryId": "elevator",
+          "coordinates": { "x": 500, "y": 500 },
+          "isNavigable": true
+        },
+        {
+          "id": "loc-106",
+          "name": "Restroom (Male/Female)",
+          "categoryId": "restroom",
+          "coordinates": { "x": 550, "y": 450 },
+          "isNavigable": true
+        }
+      ]
+    },
+    {
+      "id": "F2",
+      "name": "First Floor",
+      "level": 1,
+      "mapImageUrl": "/maps/first_floor.svg",
+      "locations": [
+        {
+          "id": "loc-201",
+          "name": "Cardiology",
+          "categoryId": "dept",
+          "coordinates": { "x": 250, "y": 300 },
+          "isNavigable": true,
+          "details": {
+            "headOfDept": "Dr. Strange",
+            "phone": "+1-555-0144",
+            "openingHours": "09:00 - 17:00",
+            "services": ["ECG", "Stress Test", "Heart Surgery"]
+          }
+        },
+        {
+          "id": "loc-202",
+          "name": "General Surgery",
+          "categoryId": "dept",
+          "coordinates": { "x": 750, "y": 300 },
+          "isNavigable": true,
+          "details": {
+            "headOfDept": "Dr. Bailey",
+            "phone": "+1-555-0155",
+            "openingHours": "08:00 - 18:00"
+          }
+        },
+        {
+          "id": "loc-203",
+          "name": "Elevator Bank A",
+          "categoryId": "elevator",
+          "coordinates": { "x": 500, "y": 500 },
+          "isNavigable": true
+        },
+        {
+          "id": "loc-204",
+          "name": "Cafeteria",
+          "categoryId": "amenity",
+          "coordinates": { "x": 500, "y": 800 },
+          "isNavigable": true,
+          "details": {
+            "openingHours": "07:00 - 21:00",
+            "description": "Healthy meals and coffee."
+          }
+        },
+        {
+          "id": "loc-205",
+          "name": "Restroom (Accessible)",
+          "categoryId": "restroom",
+          "coordinates": { "x": 550, "y": 450 },
+          "isNavigable": true
+        }
+      ]
+    },
+    {
+      "id": "F3",
+      "name": "Second Floor",
+      "level": 2,
+      "mapImageUrl": "/maps/second_floor.svg",
+      "locations": [
+        {
+          "id": "loc-301",
+          "name": "Pediatrics",
+          "categoryId": "dept",
+          "coordinates": { "x": 300, "y": 200 },
+          "isNavigable": true,
+          "details": {
+            "headOfDept": "Dr. Dolittle",
+            "phone": "+1-555-0166",
+            "openingHours": "09:00 - 17:00",
+            "services": ["Vaccinations", "Checkups", "Neonatal Care"]
+          }
+        },
+        {
+          "id": "loc-302",
+          "name": "Neurology",
+          "categoryId": "dept",
+          "coordinates": { "x": 700, "y": 200 },
+          "isNavigable": true,
+          "details": {
+            "headOfDept": "Dr. Shepherd",
+            "phone": "+1-555-0177",
+            "openingHours": "09:00 - 16:00"
+          }
+        },
+        {
+          "id": "loc-303",
+          "name": "Elevator Bank A",
+          "categoryId": "elevator",
+          "coordinates": { "x": 500, "y": 500 },
+          "isNavigable": true
+        },
+        {
+          "id": "loc-304",
+          "name": "Chapel / Quiet Room",
+          "categoryId": "amenity",
+          "coordinates": { "x": 800, "y": 800 },
+          "isNavigable": true,
+          "details": {
+            "openingHours": "24/7"
+          }
+        }
+      ]
+    }
+  ]
+},
+{
+  "hospital": {
+    "meta": {
+      "id": "hosp-001",
+      "name": "CityCare General Hospital",
+      "totalFloors": 3,
+      "coordinateSystem": "2D_CARTESIAN_0_100"
+    },
+
+    "floors": [
+      { "floorNumber": 1, "label": "Ground Floor" },
+      { "floorNumber": 2, "label": "First Floor" },
+      { "floorNumber": 3, "label": "Second Floor" }
+    ],
+
+    "departments": [
+      {
+        "id": "dept-cardio",
+        "name": "Cardiology",
+        "floor": 2,
+        "location": { "x": 65, "y": 40 },
+        "services": [
+          "ECG",
+          "Echocardiography",
+          "Stress Testing"
+        ],
+        "headOfDepartment": {
+          "name": "Dr. Ananya Rao",
+          "contact": "+91-98765-43210"
+        },
+        "openingHours": {
+          "weekdays": "09:00 - 17:00",
+          "weekends": "09:00 - 13:00"
+        }
+      },
+      {
+        "id": "dept-radio",
+        "name": "Radiology",
+        "floor": 1,
+        "location": { "x": 40, "y": 60 },
+        "services": [
+          "X-Ray",
+          "CT Scan",
+          "MRI"
+        ],
+        "headOfDepartment": {
+          "name": "Dr. Vikram Singh",
+          "contact": "+91-91234-56789"
+        },
+        "openingHours": {
+          "weekdays": "08:00 - 20:00",
+          "weekends": "10:00 - 16:00"
+        }
+      },
+      {
+        "id": "dept-pediatrics",
+        "name": "Pediatrics",
+        "floor": 3,
+        "location": { "x": 30, "y": 25 },
+        "services": [
+          "Child OPD",
+          "Vaccination",
+          "Neonatal Care"
+        ],
+        "headOfDepartment": {
+          "name": "Dr. Meera Nair",
+          "contact": "+91-99887-66554"
+        },
+        "openingHours": {
+          "weekdays": "09:00 - 18:00",
+          "weekends": "09:00 - 14:00"
+        }
+      }
+    ],
+
+    "pointsOfInterest": [
+      {
+        "id": "poi-elevator-1",
+        "type": "ELEVATOR",
+        "floor": 1,
+        "location": { "x": 50, "y": 50 },
+        "label": "Main Elevator",
+        "accessibility": { "wheelchairAccessible": true }
+      },
+      {
+        "id": "poi-elevator-2",
+        "type": "ELEVATOR",
+        "floor": 2,
+        "location": { "x": 50, "y": 50 },
+        "label": "Main Elevator",
+        "accessibility": { "wheelchairAccessible": true }
+      },
+      {
+        "id": "poi-restroom-1f",
+        "type": "RESTROOM",
+        "floor": 1,
+        "location": { "x": 20, "y": 80 },
+        "label": "Restroom - East Wing",
+        "accessibility": { "wheelchairAccessible": true }
+      },
+      {
+        "id": "poi-restroom-2f",
+        "type": "RESTROOM",
+        "floor": 2,
+        "location": { "x": 75, "y": 20 },
+        "label": "Restroom - Cardiology Wing",
+        "accessibility": { "wheelchairAccessible": true }
+      },
+      {
+        "id": "poi-exit-main",
+        "type": "EXIT",
+        "floor": 1,
+        "location": { "x": 5, "y": 50 },
+        "label": "Main Exit",
+        "accessibility": { "wheelchairAccessible": true }
+      }
+    ]
+  }
+}
+
+]

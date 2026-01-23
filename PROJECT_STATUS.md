@@ -1,7 +1,86 @@
-# Health Companion Hub - Project Implementation Status
+# Integrated Patient Care Dashboard - Implementation Status
+
+## Project Information
+
+**Official Title:** Integrated Patient Care Dashboard for Enhancing Communication, Medical Record Management, and Service Navigation Within Hospitals
+
+**Institution:** GITAM School of CSE, GITAM (Deemed to be University), Bengaluru, Karnataka, INDIA  
+**Batch:** CSE-39  
+**Guide:** Dr. Arjun K P, Assistant Professor
+
+**Team Members:**
+- Mohammed Yaseen Agha (BU22CSEN0102188)
+- Nandish S K (BU22CSEN0102326)
+- P. Sujith (BU22CSEN0101493)
+- Nithin M (BU22CSEN0102394)
 
 **Last Updated:** January 23, 2026  
-**Assessment Date:** 07:46 IST
+**Assessment Date:** 07:56 IST  
+**Review Status:** Post Review-2
+
+---
+
+## 📌 Review Feedback & Actions Taken
+
+### **Feedback from Review-1:**
+1. ✅ **Problem statement was too confusing** → Simplified and clarified
+2. ✅ **Objectives needed clarification** → Refined scope and boundaries
+
+### **Current Problem Statement:**
+> "Integrated patient care dashboard for enhancing communication, record management, and service guidance within hospitals."
+
+---
+
+## 🛠️ Technology Stack (As Per Review-2)
+
+### **Frontend:**
+- React.js / Next.js - Dynamic, responsive UI
+- Shadcn/ui + Tailwind CSS - Component library and styling
+- TypeScript - Type safety
+- Recharts - Data visualization
+
+### **Backend:**
+- Python 3.x with FastAPI - Application logic and routing
+- n8n / Flowise - Agentic workflows and ML automation
+- Huggingface + Gemini SDK - LLM integration and fine-tuning
+
+### **Databases:**
+- MongoDB / Redis - User summaries and chat storage
+- PostgreSQL - Relational data (users, cases, reports metadata)
+
+### **Storage:**
+- AWS S3 - Report and document storage
+
+### **ML/AI Algorithms:**
+1. **Text Processing & NLP:**
+   - TF-IDF Vectorization - Keyword extraction
+   - Sentence-BERT / MiniLM Embeddings - Text vectorization
+   - Rule-based NLP - Spelling correction, synonym matching
+2. **Machine Learning:**
+   - XGBoost / LightGBM - Disease prediction from symptoms
+   - Random Forest / Logistic Regression - Baseline classifiers
+
+### **Development Tools:**
+- Git/GitHub - Version control and CI/CD
+- VS Code - Development environment
+- Postman - API testing
+- MongoDB Compass / Atlas - Database management
+
+### **Deployment:**
+- AWS / Render - Cloud hosting and scalability
+
+### **Hardware Requirements:**
+- Processor: Intel Core i5 or higher
+- RAM: Minimum 16 GB
+- Storage: 250 GB HDD / SSD
+- GPU: NVIDIA GPU (for ML model training)
+- Cloud Storage: AWS S3
+
+### **Software Requirements:**
+- Operating System: Windows 10/11 or Linux (Ubuntu)
+- Browser: Google Chrome / Edge
+- Node.js: v18+ (for frontend development)
+- Python: 3.x (for backend)
 
 ---
 
@@ -362,7 +441,7 @@
 
 ### **Critical Issues:**
 
-1. **Analysis Status Not Updating** (Backend Issue)
+1. **Analysis Status Not Updating** (Backend Issue) - Fixed
    - **Problem:** `mongo_analysis_id` not populated after analysis
    - **Impact:** "Analyzed" count always shows 0
    - **Location:** Backend analysis completion handler
@@ -497,7 +576,72 @@
 
 ---
 
-**Document Generated:** January 23, 2026, 07:46 IST  
+## 🏗️ System Architecture & Design (From Review-2)
+
+### **Project Workflow:**
+The system follows a multi-layered architecture:
+1. **User Interface Layer** - React.js frontend for patients and doctors
+2. **API Gateway Layer** - FastAPI backend handling requests
+3. **Business Logic Layer** - n8n workflows for automation
+4. **AI/ML Layer** - Gemini SDK + Huggingface models
+5. **Data Layer** - PostgreSQL (metadata) + MongoDB (analysis) + S3 (files)
+
+### **Data Flow:**
+1. User uploads report → S3 storage
+2. Backend triggers extraction → Gemini API
+3. Extracted data stored → MongoDB
+4. ML models process → XGBoost/LightGBM
+5. Results displayed → React frontend
+
+### **Key Design Patterns:**
+- **MVC Architecture** - Separation of concerns
+- **RESTful API** - Standard HTTP methods
+- **JWT Authentication** - Secure token-based auth
+- **React Query** - Server state management
+- **Component-Based UI** - Reusable components
+
+### **UML Diagrams Completed:**
+- ✅ Use Case Diagram - User interactions
+- ✅ Class Diagram - Object relationships
+- ✅ Sequence Diagram - Process flows
+- ✅ Data Flow Diagram - Information flow
+
+---
+
+## 📚 References (From Review-2)
+
+1. A. Y. Bischof et al., "A Collection of Components to Design Clinical Dashboards Incorporating Patient-Reported Outcome Measures," *J. Med. Internet Res.*, vol. 26, no. 10, 2024.
+
+2. D. Keszthelyi et al., "Patient Information Summarization in Clinical Settings: Scoping Review," *JMIR Med. Inform.*, vol. 11, 2023.
+
+3. E. Coiera et al., "Clinical and economic impact of digital dashboards on hospital inpatient care: a systematic review," *J. Am. Med. Inform. Assoc. Open*, vol. 8, no. 4, 2025.
+
+4. C. Lee, K. A. Vogt, and S. Kumar, "Prospects for AI clinical summarization to reduce the burden of patient chart review," *Front. Digit. Health*, vol. 6, 2024.
+
+5. S. Mandal et al., "Utilization of Generative AI-drafted Responses for Managing Patient-Provider Communication," *npj Digit. Med.*, vol. 8, 2025.
+
+6. M. Tai-Seale et al., "AI-Generated Draft Replies Integrated Into Health Records and Physicians' Electronic Communication," *JAMA Netw. Open*, vol. 7, no. 4, 2024.
+
+7. J. M. Biro et al., "Opportunities and risks of artificial intelligence in patient portal messaging in primary care," *npj Digit. Med.*, vol. 8, 2025.
+
+8. G. Petridis et al., "An AI-Enabled, Patient-Centred Digital Platform for Integrated Chronic Heart Failure Management," *Healthc. Technol. Lett.*, vol. 12, no. 1, 2025.
+
+---
+
+## 🎓 Academic Context
+
+**Course:** Capstone Project – I  
+**Review:** Review-2 (Completed)  
+**Next Milestone:** Module Development and Integration
+
+**Review-2 Conclusion:**
+> "The project has completed its foundational structure, including the core architecture, system workflow design, and UML modelling. These components provide a clear blueprint for development and ensure that the upcoming implementation phases will follow a well-defined technical pathway."
+
+---
+
+**Document Generated:** January 23, 2026, 07:56 IST  
 **Frontend Version:** React + TypeScript + Vite  
+**Backend Version:** Python 3.x + FastAPI  
 **UI Library:** Shadcn/ui + Tailwind CSS  
-**State Management:** React Query + Context API
+**State Management:** React Query + Context API  
+**AI/ML:** Gemini SDK + Huggingface + XGBoost

@@ -26,15 +26,17 @@ const patientNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/patient/dashboard', icon: LayoutDashboard },
   { label: 'My Cases', href: '/patient/cases', icon: FileText },
   { label: 'Reports', href: '/patient/reports', icon: Sparkles },
-  { label: 'Bookings', href: '/patient/bookings', icon: CalendarCheck },
+  { label: 'Appointments', href: '/patient/appointments', icon: CalendarCheck },
+  { label: 'My Doctors', href: '/patient/bookings', icon: Users },
   { label: 'AI Chat', href: '/patient/chat', icon: MessageSquare },
 ];
 
 const doctorNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/doctor/dashboard', icon: LayoutDashboard },
+  { label: 'Appointments', href: '/doctor/appointments', icon: CalendarCheck },
+  { label: 'Assignments', href: '/doctor/bookings', icon: Users },
   { label: 'Reports', href: '/doctor/reports', icon: Sparkles },
   { label: 'Cases', href: '/doctor/cases', icon: ClipboardList },
-  { label: 'Bookings', href: '/doctor/bookings', icon: CalendarCheck },
   { label: 'AI Chat', href: '/doctor/chat', icon: MessageSquare },
 ];
 

@@ -123,6 +123,10 @@ export const QUERY_KEYS = {
   
   // Analysis Status (for auto-refresh)
   ANALYSIS_STATUS: (reportId: string) => ['analysisStatus', reportId] as const,
+
+  // Appointments
+  APPOINTMENTS: ['appointments'] as const,
+  MY_APPOINTMENTS: (role: string) => ['appointments', role] as const,
 } as const;
 
 export const ROUTES = {

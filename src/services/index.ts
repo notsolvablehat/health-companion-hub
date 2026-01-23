@@ -10,3 +10,4 @@ export { default as aiService } from './ai';
 export { default as dashboardService } from './dashboard';
 export { default as notificationsService } from './notifications';
 export { default as chatService } from './chat';
+export { appointmentsService } from './appointments';

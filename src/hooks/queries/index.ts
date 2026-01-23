@@ -85,3 +85,10 @@ export {
   useUpdateChatReports as useModifyChatReports,
   usePrefetchChat as usePrefetchChatHistory,
 } from './useChatQueries';
+
+// Appointments
+export {
+  useAppointments,
+  useCreateAppointment,
+  useUpdateAppointmentStatus,
+} from './useAppointmentQueries';

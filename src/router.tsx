@@ -19,6 +19,7 @@ import PatientReportInsights from '@/pages/patient/ReportInsights';
 import PatientBookings from '@/pages/patient/Bookings';
 import PatientChat from '@/pages/patient/Chat';
 import PatientDiabetesDashboard from '@/pages/patient/DiabetesDashboard';
+import PatientAppointments from '@/pages/patient/Appointments';
 
 // Doctor Pages
 import DoctorDashboard from '@/pages/doctor/Dashboard';
@@ -30,6 +31,7 @@ import DoctorCaseFullData from '@/pages/doctor/CaseFullData';
 import DoctorCreateCase from '@/pages/doctor/CreateCase';
 import DoctorBookings from '@/pages/doctor/Bookings';
 import DoctorChat from '@/pages/doctor/Chat';
+import DoctorAppointments from '@/pages/doctor/Appointments';
 
 // Shared Pages
 import Profile from '@/pages/shared/Profile';
@@ -99,6 +101,10 @@ export const router = createBrowserRouter([
                 element: <PatientBookings />,
               },
               {
+                path: '/patient/appointments',
+                element: <PatientAppointments />,
+              },
+              {
                 path: '/patient/chat',
                 element: <PatientChat />,
               },
@@ -157,6 +163,10 @@ export const router = createBrowserRouter([
               {
                 path: '/doctor/bookings',
                 element: <DoctorBookings />,
+              },
+              {
+                path: '/doctor/appointments',
+                element: <DoctorAppointments />,
               },
               {
                 path: '/doctor/chat',

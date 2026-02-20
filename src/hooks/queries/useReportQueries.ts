@@ -7,6 +7,17 @@ import { QUERY_KEYS } from '@/lib/constants';
 import type { ReportAnalysisCache } from '@/types/report';
 
 /**
+ * Hook to get available patients for doctor to upload reports for
+ */
+export function useAvailablePatients() {
+  return useQuery({
+    queryKey: ['available-patients'],
+    queryFn: () => reportsService.getAvailablePatients(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
  * Hook to get all reports for current user
  */
 export function useReports() {

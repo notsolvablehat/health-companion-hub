@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { format, addDays, isSameDay, setHours, setMinutes, isBefore, startOfToday, isWeekend } from 'date-fns';
+import { format, addDays, isSameDay, setHours, setMinutes, isBefore, startOfToday, isWeekend, parse } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useMyDoctors } from '@/hooks/queries/useAssignmentQueries';
-import { useCreateAppointment } from '@/hooks/queries/useAppointmentQueries';
+import { useCreateAppointment, useBookedSlots } from '@/hooks/queries/useAppointmentQueries';
 import { CalendarDays, Clock, User, FileText, Loader2, Plus, AlertCircle } from 'lucide-react';
 import { AppointmentType } from '@/types/appointment';
 import { toast } from 'sonner';
@@ -50,10 +50,31 @@ export function BookAppointmentDialog() {
   const { data: doctorsData, isLoading: isLoadingDoctors } = useMyDoctors();
   const createMutation = useCreateAppointment();
 
+  // Fetch booked slots for the selected doctor and date
+  const dateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined;
+  const { data: bookedSlotsData, isLoading: isLoadingSlots } = useBookedSlots(selectedDoctorId || undefined, dateStr);
+
   // Filter only active doctors
   const doctors = doctorsData?.doctors || [];
 
   const timeSlots = useMemo(() => generateTimeSlots(selectedDate), [selectedDate]);
+
+  // Check if a time slot is booked
+  const isSlotBooked = (slotTime: Date) => {
+    if (!bookedSlotsData?.booked_slots) return false;
+    
+    const slotStartTime = slotTime.getTime();
+    const slotEndTime = slotStartTime + (30 * 60 * 1000); // 30 minutes later
+    
+    return bookedSlotsData.booked_slots.some(bookedSlot => {
+      const bookedStart = new Date(bookedSlot.start_time).getTime();
+      const bookedEnd = new Date(bookedSlot.end_time).getTime();
+      
+      // Check if there's any overlap between the slot and booked time
+      // Overlaps if: slotStart < bookedEnd AND slotEnd > bookedStart
+      return slotStartTime < bookedEnd && slotEndTime > bookedStart;
+    });
+  };
 
   const handleBook = async () => {
     if (!selectedDoctorId || !selectedTimeSlot || !reason) {
@@ -183,11 +204,17 @@ export function BookAppointmentDialog() {
               {/* Time Slots */}
               <div className="space-y-2">
                 <Label>Summary & Time</Label>
-                {timeSlots.length > 0 ? (
+                {isLoadingSlots ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-sm text-muted-foreground">Loading available slots...</span>
+                  </div>
+                ) : timeSlots.length > 0 ? (
                   <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto pr-2">
                     {timeSlots.map((slot) => {
                       const slotIso = slot.toISOString();
                       const isSelected = selectedTimeSlot === slotIso;
+                      const isBooked = isSlotBooked(slot);
                       return (
                         <Button
                           key={slotIso}
@@ -195,6 +222,8 @@ export function BookAppointmentDialog() {
                           size="sm"
                           className={isSelected ? "border-primary" : ""}
                           onClick={() => setSelectedTimeSlot(slotIso)}
+                          disabled={isBooked}
+                          title={isBooked ? "This slot has been booked" : ""}
                         >
                           {format(slot, 'h:mm a')}
                         </Button>

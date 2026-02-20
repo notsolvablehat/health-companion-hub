@@ -115,14 +115,6 @@ export const router = createBrowserRouter([
                 element: <PatientNavigation />,
               },
               {
-                path: '/patient/chat',
-                element: <PatientChat />,
-              },
-              {
-                path: '/patient/chat/:chatId',
-                element: <PatientChat />,
-              },
-              {
                 path: '/patient/profile',
                 element: <Profile />,
               },
@@ -179,14 +171,6 @@ export const router = createBrowserRouter([
                 element: <DoctorAppointments />,
               },
               {
-                path: '/doctor/chat',
-                element: <DoctorChat />,
-              },
-              {
-                path: '/doctor/chat/:chatId',
-                element: <DoctorChat />,
-              },
-              {
                 path: '/doctor/profile',
                 element: <Profile />,
               },
@@ -199,6 +183,36 @@ export const router = createBrowserRouter([
         ],
       },
       
+      // Patient Chat (full-screen, outside layout)
+      {
+        element: <ProtectedRoute allowedRoles={['patient']} />,
+        children: [
+          {
+            path: '/patient/chat',
+            element: <PatientChat />,
+          },
+          {
+            path: '/patient/chat/:chatId',
+            element: <PatientChat />,
+          },
+        ],
+      },
+
+      // Doctor Chat (full-screen, outside layout)
+      {
+        element: <ProtectedRoute allowedRoles={['doctor']} />,
+        children: [
+          {
+            path: '/doctor/chat',
+            element: <DoctorChat />,
+          },
+          {
+            path: '/doctor/chat/:chatId',
+            element: <DoctorChat />,
+          },
+        ],
+      },
+
       // Shared Routes Redirects
       {
         path: '/profile',

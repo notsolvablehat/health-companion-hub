@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard — Sidebar Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ─── Sidebar ─── */
+        .sidebar {
+            width: 280px;
+            min-height: 100vh;
+            background: #0d0d0d;
+            border-right: 1px solid #1a1a1a;
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow-y: auto;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-profile {
+            padding: 28px 22px 20px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .profile-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .profile-dept {
+            font-size: 12px;
+            color: #555;
+        }
+
+        .sidebar-section {
+            padding: 20px 22px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .sidebar-label {
+            font-size: 10px;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 14px;
+            font-weight: 500;
+        }
+
+        .quick-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .quick-stat + .quick-stat { border-top: 1px solid #141414; }
+
+        .qs-label {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .qs-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .qs-value.critical { color: #ff4444; }
+        .qs-value.good { color: #00ff88; }
+
+        /* Alert items */
+        .alert-item {
+            padding: 10px 14px;
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: border-color 0.2s;
+        }
+
+        .alert-item:hover { border-color: #2a2a2a; }
+
+        .alert-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .alert-name {
+            font-size: 12px;
+            font-weight: 500;
+            color: #ccc;
+        }
+
+        .alert-time {
+            font-size: 10px;
+            color: #555;
+        }
+
+        .alert-desc {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .alert-severity {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .alert-severity.crit { background: #ff4444; }
+        .alert-severity.warn { background: #ffaa00; }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 16px 22px;
+            border-top: 1px solid #1a1a1a;
+        }
+
+        .toggle-btn {
+            width: 100%;
+            background: #1a1a1a;
+            border: 1px solid #222;
+            padding: 9px;
+            border-radius: 6px;
+            color: #888;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn:hover { background: #222; color: #ccc; }
+
+        /* ─── Main Area ─── */
+        .main {
+            margin-left: 280px;
+            flex: 1;
+            padding: 24px;
+            min-height: 100vh;
+        }
+
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .main-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .main-date {
+            font-size: 12px;
+            color: #555;
+        }
+
+        .grid {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .grid-1 { grid-template-columns: 1fr; }
+        .grid-2-1 { grid-template-columns: 2fr 1fr; }
+        .grid-1-2 { grid-template-columns: 1fr 2fr; }
+
+        .panel {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 22px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .panel-title {
+            font-size: 11px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        .panel-sub {
+            font-size: 10px;
+            color: #444;
+        }
+
+        .chart-box { position: relative; height: 260px; }
+        .chart-box.tall { height: 320px; }
+        .chart-box.short { height: 220px; }
+
+        /* ─── Light Mode ─── */
+        body.light-mode { background: #f5f5f7; }
+        body.light-mode .sidebar { background: #fff; border-color: #e8e8e8; }
+        body.light-mode .sidebar-profile { border-color: #eee; }
+        body.light-mode .profile-name { color: #1a1a1a; }
+        body.light-mode .profile-dept { color: #999; }
+        body.light-mode .sidebar-section { border-color: #eee; }
+        body.light-mode .sidebar-label { color: #aaa; }
+        body.light-mode .qs-label { color: #999; }
+        body.light-mode .qs-value { color: #1a1a1a; }
+        body.light-mode .alert-item { background: #fafafa; border-color: #e8e8e8; }
+        body.light-mode .alert-item:hover { border-color: #ddd; }
+        body.light-mode .alert-name { color: #333; }
+        body.light-mode .alert-desc { color: #888; }
+        body.light-mode .sidebar-footer { border-color: #eee; }
+        body.light-mode .toggle-btn { background: #f0f0f0; border-color: #ddd; color: #666; }
+        body.light-mode .main-header { border-color: #e0e0e0; }
+        body.light-mode .main-title { color: #1a1a1a; }
+        body.light-mode .main-date { color: #999; }
+        body.light-mode .panel { background: #fff; border-color: #e8e8e8; }
+        body.light-mode .panel-title { color: #999; }
+        body.light-mode .quick-stat + .quick-stat { border-color: #eee; }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 1100px) {
+            .grid-3 { grid-template-columns: 1fr 1fr; }
+            .grid-2-1, .grid-1-2 { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .main { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-profile">
+            <div class="profile-name">Dr. Sharma</div>
+            <div class="profile-dept">Internal Medicine · General Ward</div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-label">Today's Summary</div>
+            <div class="quick-stat">
+                <div class="qs-label">Scheduled</div>
+                <div class="qs-value">8</div>
+            </div>
+            <div class="quick-stat">
+                <div class="qs-label">Completed</div>
+                <div class="qs-value good">3</div>
+            </div>
+            <div class="quick-stat">
+                <div class="qs-label">Critical</div>
+                <div class="qs-value critical">2</div>
+            </div>
+            <div class="quick-stat">
+                <div class="qs-label">Pending Reports</div>
+                <div class="qs-value">4</div>
+            </div>
+            <div class="quick-stat">
+                <div class="qs-label">Avg Wait</div>
+                <div class="qs-value">14 min</div>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-label">Alerts</div>
+            <div class="alert-item">
+                <div class="alert-item-header">
+                    <div class="alert-name"><span class="alert-severity crit"></span>Rajesh Kumar</div>
+                    <div class="alert-time">09:00</div>
+                </div>
+                <div class="alert-desc">Blood sugar 312 mg/dL, ketones positive</div>
+            </div>
+            <div class="alert-item">
+                <div class="alert-item-header">
+                    <div class="alert-name"><span class="alert-severity crit"></span>Amit Patel</div>
+                    <div class="alert-time">11:15</div>
+                </div>
+                <div class="alert-desc">Troponin elevated, ECG ST changes</div>
+            </div>
+            <div class="alert-item">
+                <div class="alert-item-header">
+                    <div class="alert-name"><span class="alert-severity warn"></span>Sneha Desai</div>
+                    <div class="alert-time">Lab</div>
+                </div>
+                <div class="alert-desc">LDL 198 mg/dL, needs statin review</div>
+            </div>
+            <div class="alert-item">
+                <div class="alert-item-header">
+                    <div class="alert-name"><span class="alert-severity warn"></span>Karan Shah</div>
+                    <div class="alert-time">Lab</div>
+                </div>
+                <div class="alert-desc">TSH 8.4 mIU/L, subclinical hypo</div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <button class="toggle-btn" onclick="document.body.classList.toggle('light-mode')">Toggle Theme</button>
+        </div>
+    </aside>
+
+    <div class="main">
+        <div class="main-header">
+            <div class="main-title">Analytics</div>
+            <div class="main-date">Wednesday, 19 Feb 2026</div>
+        </div>
+
+        <!-- Row 1: Bubble + Stacked Bar -->
+        <div class="grid grid-2">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Patient Demographics</div>
+                    <div class="panel-sub">Age × Visits × Severity</div>
+                </div>
+                <div class="chart-box">
+                    <canvas id="bubbleChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Daily Breakdown</div>
+                    <div class="panel-sub">By visit type</div>
+                </div>
+                <div class="chart-box">
+                    <canvas id="stackedChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Horizontal Bar + Scatter -->
+        <div class="grid grid-2">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Top Diagnoses</div>
+                    <div class="panel-sub">Last 90 days</div>
+                </div>
+                <div class="chart-box tall">
+                    <canvas id="diagChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Outcome vs Duration</div>
+                    <div class="panel-sub">Treatment effectiveness</div>
+                </div>
+                <div class="chart-box tall">
+                    <canvas id="scatterChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Revenue + Referrals -->
+        <div class="grid grid-2-1">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Monthly Volume</div>
+                    <div class="panel-sub">12-month trend</div>
+                </div>
+                <div class="chart-box">
+                    <canvas id="volumeChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Referral Sources</div>
+                    <div class="panel-sub">Where patients come from</div>
+                </div>
+                <div class="chart-box">
+                    <canvas id="refChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 4: Risk Radar + Retention Line -->
+        <div class="grid grid-2">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Risk Profile</div>
+                    <div class="panel-sub">Your panel vs benchmarks</div>
+                </div>
+                <div class="chart-box">
+                    <canvas id="riskRadar"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Retention Rate</div>
+                    <div class="panel-sub">Follow-up compliance</div>
+                </div>
+                <div class="chart-box">
+                    <canvas id="retentionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const C = {
+            green: '#00ff88', blue: '#00aaff', red: '#ff4444',
+            amber: '#ffaa00', purple: '#8b5cf6', teal: '#14b8a6',
+            grid: 'rgba(255,255,255,0.04)', tick: '#555'
+        };
+
+        const scales = {
+            y: { beginAtZero: true, grid: { color: C.grid }, ticks: { color: C.tick, font: { size: 10 } } },
+            x: { grid: { display: false }, ticks: { color: C.tick, font: { size: 10 } } }
+        };
+
+        const legend = (pos = 'bottom') => ({
+            position: pos,
+            labels: { color: '#888', boxWidth: 10, padding: 12, font: { size: 10 } }
+        });
+
+        // 1. Bubble Chart (age vs visits, bubble size = severity)
+        new Chart(document.getElementById('bubbleChart'), {
+            type: 'bubble',
+            data: {
+                datasets: [{
+                    label: 'Critical',
+                    data: [
+                        { x: 58, y: 12, r: 14 },
+                        { x: 45, y: 8, r: 12 }
+                    ],
+                    backgroundColor: 'rgba(255,68,68,0.6)',
+                    borderColor: C.red,
+                    borderWidth: 1
+                }, {
+                    label: 'High',
+                    data: [
+                        { x: 52, y: 6, r: 10 },
+                        { x: 38, y: 9, r: 11 },
+                        { x: 67, y: 15, r: 9 }
+                    ],
+                    backgroundColor: 'rgba(255,170,0,0.5)',
+                    borderColor: C.amber,
+                    borderWidth: 1
+                }, {
+                    label: 'Moderate',
+                    data: [
+                        { x: 42, y: 4, r: 8 },
+                        { x: 35, y: 3, r: 7 },
+                        { x: 55, y: 5, r: 8 },
+                        { x: 48, y: 7, r: 6 }
+                    ],
+                    backgroundColor: 'rgba(0,170,255,0.4)',
+                    borderColor: C.blue,
+                    borderWidth: 1
+                }, {
+                    label: 'Stable',
+                    data: [
+                        { x: 28, y: 2, r: 5 },
+                        { x: 33, y: 1, r: 4 },
+                        { x: 42, y: 3, r: 5 },
+                        { x: 50, y: 2, r: 4 },
+                        { x: 61, y: 4, r: 6 }
+                    ],
+                    backgroundColor: 'rgba(0,255,136,0.35)',
+                    borderColor: C.green,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: legend() },
+                scales: {
+                    y: { ...scales.y, title: { display: true, text: 'Visits', color: '#555', font: { size: 10 } } },
+                    x: { ...scales.x, title: { display: true, text: 'Age', color: '#555', font: { size: 10 } } }
+                }
+            }
+        });
+
+        // 2. Stacked Bar (daily by type)
+        new Chart(document.getElementById('stackedChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                datasets: [
+                    { label: 'Consultation', data: [6, 8, 4, 7, 9, 5], backgroundColor: C.green, borderRadius: 2 },
+                    { label: 'Follow-up', data: [4, 5, 3, 5, 4, 2], backgroundColor: C.blue, borderRadius: 2 },
+                    { label: 'Emergency', data: [1, 2, 1, 2, 1, 0], backgroundColor: C.red, borderRadius: 2 },
+                    { label: 'Procedure', data: [1, 0, 1, 0, 2, 1], backgroundColor: C.amber, borderRadius: 2 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: legend() },
+                scales: {
+                    y: { stacked: true, ...scales.y },
+                    x: { stacked: true, ...scales.x }
+                }
+            }
+        });
+
+        // 3. Horizontal Bar (top diagnoses)
+        new Chart(document.getElementById('diagChart'), {
+            type: 'bar',
+            data: {
+                labels: [
+                    'Type 2 DM', 'Hypertension', 'Hypothyroidism',
+                    'CAD', 'COPD', 'Lower Back Pain',
+                    'Anxiety/Depression', 'GERD', 'Anemia', 'UTI'
+                ],
+                datasets: [{
+                    data: [42, 38, 24, 19, 16, 14, 12, 11, 9, 7],
+                    backgroundColor: [
+                        C.green, C.blue, C.purple, C.red, C.amber,
+                        C.teal, '#e879f9', '#f97316', C.blue, '#94a3b8'
+                    ],
+                    borderRadius: 4,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: C.grid }, ticks: { color: C.tick, font: { size: 10 } } },
+                    y: { grid: { display: false }, ticks: { color: '#aaa', font: { size: 11 } } }
+                }
+            }
+        });
+
+        // 4. Scatter (treatment duration vs outcome)
+        new Chart(document.getElementById('scatterChart'), {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Diabetes',
+                    data: [
+                        { x: 30, y: 72 }, { x: 60, y: 78 }, { x: 90, y: 85 },
+                        { x: 45, y: 68 }, { x: 120, y: 82 }
+                    ],
+                    backgroundColor: 'rgba(0,255,136,0.6)',
+                    borderColor: C.green,
+                    pointRadius: 6
+                }, {
+                    label: 'Cardiac',
+                    data: [
+                        { x: 14, y: 60 }, { x: 30, y: 70 }, { x: 60, y: 88 },
+                        { x: 90, y: 91 }
+                    ],
+                    backgroundColor: 'rgba(255,68,68,0.6)',
+                    borderColor: C.red,
+                    pointRadius: 6
+                }, {
+                    label: 'Thyroid',
+                    data: [
+                        { x: 30, y: 65 }, { x: 60, y: 82 }, { x: 90, y: 90 },
+                        { x: 120, y: 92 }, { x: 150, y: 88 }
+                    ],
+                    backgroundColor: 'rgba(139,92,246,0.6)',
+                    borderColor: C.purple,
+                    pointRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: legend() },
+                scales: {
+                    x: { ...scales.x, title: { display: true, text: 'Days in treatment', color: '#555', font: { size: 10 } } },
+                    y: { ...scales.y, title: { display: true, text: 'Outcome score', color: '#555', font: { size: 10 } }, min: 40 }
+                }
+            }
+        });
+
+        // 5. Monthly Volume (line)
+        new Chart(document.getElementById('volumeChart'), {
+            type: 'line',
+            data: {
+                labels: ['Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb'],
+                datasets: [{
+                    label: 'Patients',
+                    data: [36, 42, 38, 45, 41, 39, 48, 52, 44, 40, 47, 50],
+                    borderColor: C.green,
+                    backgroundColor: 'rgba(0,255,136,0.06)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: C.green,
+                    pointBorderColor: '#0a0a0a',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: scales
+            }
+        });
+
+        // 6. Referral Sources (doughnut)
+        new Chart(document.getElementById('refChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Self', 'GP Referral', 'Emergency', 'Specialist', 'Online'],
+                datasets: [{
+                    data: [35, 28, 12, 18, 7],
+                    backgroundColor: [C.green, C.blue, C.red, C.purple, C.amber],
+                    borderWidth: 0,
+                    borderRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: { legend: legend() }
+            }
+        });
+
+        // 7. Risk Radar
+        new Chart(document.getElementById('riskRadar'), {
+            type: 'radar',
+            data: {
+                labels: ['Cardiac', 'Metabolic', 'Renal', 'Hepatic', 'Pulmonary', 'Neuro'],
+                datasets: [{
+                    label: 'Your Panel',
+                    data: [72, 85, 45, 38, 52, 30],
+                    borderColor: C.green,
+                    backgroundColor: 'rgba(0,255,136,0.08)',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointBackgroundColor: C.green
+                }, {
+                    label: 'Dept Average',
+                    data: [55, 60, 50, 42, 48, 35],
+                    borderColor: '#444',
+                    backgroundColor: 'rgba(100,100,100,0.04)',
+                    borderWidth: 1,
+                    borderDash: [3, 3],
+                    pointRadius: 2,
+                    pointBackgroundColor: '#444'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: legend() },
+                scales: {
+                    r: {
+                        grid: { color: 'rgba(255,255,255,0.06)' },
+                        angleLines: { color: 'rgba(255,255,255,0.06)' },
+                        ticks: { display: false },
+                        pointLabels: { color: '#888', font: { size: 10 } },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                }
+            }
+        });
+
+        // 8. Retention (dual line)
+        new Chart(document.getElementById('retentionChart'), {
+            type: 'line',
+            data: {
+                labels: ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+                datasets: [{
+                    label: 'Follow-up Rate',
+                    data: [65, 68, 64, 72, 75, 78],
+                    borderColor: C.green,
+                    backgroundColor: 'rgba(0,255,136,0.06)',
+                    fill: true,
+                    tension: 0.3,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: C.green,
+                    pointBorderColor: '#0a0a0a',
+                    pointBorderWidth: 2
+                }, {
+                    label: 'No-show Rate',
+                    data: [18, 15, 20, 12, 11, 8],
+                    borderColor: C.red,
+                    borderWidth: 2,
+                    tension: 0.3,
+                    borderDash: [4, 3],
+                    pointRadius: 3,
+                    pointBackgroundColor: C.red,
+                    pointBorderColor: '#0a0a0a',
+                    pointBorderWidth: 2,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: legend() },
+                scales: {
+                    ...scales,
+                    y: { ...scales.y, ticks: { ...scales.y.ticks, callback: v => v + '%' } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

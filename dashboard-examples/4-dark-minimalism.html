@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - Dark Minimalism Enhanced</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .header-left h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .header-subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .theme-toggle {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            padding: 10px 20px;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background: #2a2a2a;
+            border-color: #3a3a3a;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .stat-card:hover {
+            background: #151515;
+            border-color: #2a2a2a;
+            transform: translateY(-2px);
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-card.critical { --accent: #ff4444; }
+        .stat-card.warning { --accent: #ffaa00; }
+        .stat-card.success { --accent: #00ff88; }
+        .stat-card.info { --accent: #00aaff; }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        .stat-icon {
+            font-size: 20px;
+            opacity: 0.6;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+
+        .stat-detail {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .stat-detail.positive {
+            color: #00ff88;
+        }
+
+        .stat-detail.negative {
+            color: #ff4444;
+        }
+
+        /* Trend Indicator */
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-top: 5px;
+        }
+
+        .trend-up {
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
+        }
+
+        .trend-down {
+            background: rgba(255, 68, 68, 0.1);
+            color: #ff4444;
+        }
+
+        /* Timeline Schedule */
+        .timeline-schedule {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .timeline-title {
+            font-size: 14px;
+            color: #e0e0e0;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .date-selector {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .timeline-grid {
+            position: relative;
+            height: 180px;
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 0;
+            border-top: 1px solid #2a2a2a;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .timeline-hour {
+            position: relative;
+            border-right: 1px solid #1a1a1a;
+            padding-top: 10px;
+        }
+
+        .timeline-hour:last-child {
+            border-right: none;
+        }
+
+        .hour-label {
+            position: absolute;
+            top: -25px;
+            left: 0;
+            font-size: 11px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .timeline-blip {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 2;
+        }
+
+        .blip-appointment {
+            background: #00aaff;
+            border-color: #00aaff;
+            box-shadow: 0 0 10px rgba(0, 170, 255, 0.5);
+        }
+
+        .blip-meeting {
+            background: #ffaa00;
+            border-color: #ffaa00;
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.5);
+        }
+
+        .blip-critical {
+            background: #ff4444;
+            border-color: #ff4444;
+            box-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        .timeline-blip:hover {
+            transform: scale(1.5);
+        }
+
+        .blip-tooltip {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 12px 16px;
+            min-width: 200px;
+            opacity: 0;
+            transition: all 0.3s;
+            pointer-events: none;
+            z-index: 10;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .timeline-blip:hover .blip-tooltip {
+            transform: translateX(-50%) scale(1);
+            opacity: 1;
+        }
+
+        .tooltip-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .tooltip-detail {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .tooltip-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        /* Carousel Section */
+        .carousel-section {
+            margin-bottom: 40px;
+        }
+
+        .carousel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .carousel-title {
+            font-size: 14px;
+            color: #e0e0e0;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .carousel-nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        .carousel-btn {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .carousel-btn:hover {
+            background: #2a2a2a;
+            border-color: #3a3a3a;
+        }
+
+        .carousel-container {
+            overflow-x: auto;
+            position: relative;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .carousel-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .carousel-track {
+            display: flex;
+            gap: 20px;
+            transition: transform 0.5s ease;
+        }
+
+        .patient-card {
+            min-width: 280px;
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .patient-card:hover {
+            background: #151515;
+            border-color: #2a2a2a;
+            transform: translateY(-4px);
+        }
+
+        .patient-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--severity-color);
+            border-radius: 12px 0 0 12px;
+        }
+
+        .patient-card.severity-critical { --severity-color: #ff4444; }
+        .patient-card.severity-high { --severity-color: #ffaa00; }
+        .patient-card.severity-moderate { --severity-color: #00aaff; }
+        .patient-card.severity-low { --severity-color: #00ff88; }
+
+        .patient-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .patient-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .patient-info {
+            flex: 1;
+        }
+
+        .patient-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #e0e0e0;
+            margin-bottom: 3px;
+        }
+
+        .patient-condition {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .patient-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .meta-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-new {
+            background: rgba(0, 170, 255, 0.1);
+            color: #00aaff;
+            border: 1px solid rgba(0, 170, 255, 0.2);
+        }
+
+        .badge-returning {
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+        }
+
+        .badge-urgent {
+            background: rgba(255, 68, 68, 0.1);
+            color: #ff4444;
+            border: 1px solid rgba(255, 68, 68, 0.2);
+        }
+
+        .patient-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .metric-item {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .metric-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e0e0e0;
+            margin-top: 2px;
+        }
+
+        /* Pending Cases */
+        .pending-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .pending-card {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        .pending-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .pending-title {
+            font-size: 14px;
+            color: #e0e0e0;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pending-count {
+            background: rgba(255, 68, 68, 0.1);
+            color: #ff4444;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid rgba(255, 68, 68, 0.2);
+        }
+
+        .pending-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .pending-item {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .pending-item:hover {
+            background: #111;
+            border-color: #2a2a2a;
+        }
+
+        .pending-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .pending-item-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #e0e0e0;
+        }
+
+        .pending-item-detail {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .pending-time {
+            font-size: 11px;
+            color: #999;
+        }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .chart-card {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        .chart-title {
+            font-size: 14px;
+            color: #e0e0e0;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 250px;
+        }
+
+        @media (max-width: 1200px) {
+            .pending-section {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .patient-card {
+                min-width: 240px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+        }
+
+        /* Light Mode */
+        body.light-mode { background: #f5f5f7; color: #1a1a1a; }
+        body.light-mode .header { border-color: #e0e0e0; }
+        body.light-mode .header-left h1 { color: #1a1a1a; }
+        body.light-mode .header-subtitle { color: #888; }
+        body.light-mode .theme-toggle { background: #fff; border-color: #ddd; color: #333; }
+        body.light-mode .theme-toggle:hover { background: #f0f0f0; }
+        body.light-mode .stat-card { background: #fff; border-color: #e8e8e8; }
+        body.light-mode .stat-card:hover { background: #fafafa; border-color: #ddd; }
+        body.light-mode .stat-label { color: #999; }
+        body.light-mode .stat-value { color: #1a1a1a; }
+        body.light-mode .stat-detail { color: #888; }
+        body.light-mode .timeline-schedule,
+        body.light-mode .pending-card,
+        body.light-mode .chart-card { background: #fff; border-color: #e8e8e8; }
+        body.light-mode .timeline-grid { border-color: #ddd; }
+        body.light-mode .timeline-hour { border-color: #eee; }
+        body.light-mode .hour-label { color: #aaa; }
+        body.light-mode .blip-tooltip { background: #fff; border-color: #ddd; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        body.light-mode .tooltip-title { color: #1a1a1a; }
+        body.light-mode .carousel-title,
+        body.light-mode .timeline-title,
+        body.light-mode .pending-title,
+        body.light-mode .chart-title { color: #1a1a1a; }
+        body.light-mode .carousel-btn { background: #fff; border-color: #ddd; color: #333; }
+        body.light-mode .patient-card { background: #fff; border-color: #e8e8e8; }
+        body.light-mode .patient-card:hover { background: #fafafa; border-color: #ddd; }
+        body.light-mode .patient-name { color: #1a1a1a; }
+        body.light-mode .metric-value { color: #1a1a1a; }
+        body.light-mode .pending-item { background: #f8f8f8; border-color: #eee; }
+        body.light-mode .pending-item:hover { background: #f0f0f0; }
+        body.light-mode .pending-item-name { color: #1a1a1a; }
+        body.light-mode .date-selector { background: #fff; border-color: #ddd; color: #333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-left">
+                <h1>⚕️ Dr. Sharma</h1>
+                <div class="header-subtitle">Wednesday, February 19, 2026</div>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">
+                🌓 Toggle Theme
+            </button>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card info">
+                <div class="stat-header">
+                    <div class="stat-label">Today</div>
+                    <div class="stat-icon">📅</div>
+                </div>
+                <div class="stat-value">8</div>
+                <div class="stat-detail">3 completed • 5 pending</div>
+            </div>
+
+            <div class="stat-card critical">
+                <div class="stat-header">
+                    <div class="stat-label">Critical</div>
+                    <div class="stat-icon">⚠️</div>
+                </div>
+                <div class="stat-value">2</div>
+                <div class="stat-detail negative">Needs immediate care</div>
+            </div>
+
+            <div class="stat-card warning">
+                <div class="stat-header">
+                    <div class="stat-label">Pending Review</div>
+                    <div class="stat-icon">📋</div>
+                </div>
+                <div class="stat-value">7</div>
+                <div class="stat-detail">Reports + Cases</div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div class="stat-label">Follow-up Rate</div>
+                    <div class="stat-icon">📈</div>
+                </div>
+                <div class="stat-value">78%</div>
+                <div class="stat-detail positive">
+                    <span class="trend-indicator trend-up">▲ +12%</span>
+                </div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div class="stat-label">Total Patients</div>
+                    <div class="stat-icon">👥</div>
+                </div>
+                <div class="stat-value">50</div>
+                <div class="stat-detail positive">+8% this month</div>
+            </div>
+        </div>
+
+        <!-- Today's Schedule Timeline -->
+        <div class="timeline-schedule">
+            <div class="timeline-header">
+                <div class="timeline-title">Today's Schedule</div>
+                <select class="date-selector">
+                    <option>Today - Feb 19, 2026</option>
+                </select>
+            </div>
+            <div class="timeline-grid">
+                <div class="timeline-hour">
+                    <div class="hour-label">08:00</div>
+                </div>
+                <div class="timeline-hour">
+                    <div class="hour-label">09:00</div>
+                    <div class="timeline-blip blip-appointment" style="top: 40%; left: 20%;">
+                        <div class="blip-tooltip">
+                            <div class="tooltip-title">Rajesh Kumar</div>
+                            <div class="tooltip-detail">Diabetes Consultation</div>
+                            <div class="tooltip-time">09:00 AM - 09:30 AM</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timeline-hour">
+                    <div class="hour-label">10:00</div>
+                    <div class="timeline-blip blip-appointment" style="top: 60%; left: 60%;">
+                        <div class="blip-tooltip">
+                            <div class="tooltip-title">Priya Sharma</div>
+                            <div class="tooltip-detail">Hypertension Follow-up</div>
+                            <div class="tooltip-time">10:30 AM - 11:00 AM</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timeline-hour">
+                    <div class="hour-label">11:00</div>
+                    <div class="timeline-blip blip-critical" style="top: 30%; left: 10%;">
+                        <div class="blip-tooltip">
+                            <div class="tooltip-title">Emergency: Amit Patel</div>
+                            <div class="tooltip-detail">Severe Chest Pain</div>
+                            <div class="tooltip-time">11:15 AM - 12:00 PM</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timeline-hour">
+                    <div class="hour-label">12:00</div>
+                    <div class="timeline-blip blip-meeting" style="top: 50%; left: 40%;">
+                        <div class="blip-tooltip">
+                            <div class="tooltip-title">Team Meeting</div>
+                            <div class="tooltip-detail">Weekly Case Review</div>
+                            <div class="tooltip-time">12:00 PM - 12:45 PM</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timeline-hour">
+                    <div class="hour-label">13:00</div>
+                </div>
+                <div class="timeline-hour">
+                    <div class="hour-label">14:00</div>
+                    <div class="timeline-blip blip-appointment" style="top: 45%; left: 25%;">
+                        <div class="blip-tooltip">
+                            <div class="tooltip-title">Sunita Reddy</div>
+                            <div class="tooltip-detail">Cardiac ECG Review</div>
+                            <div class="tooltip-time">02:00 PM - 02:30 PM</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timeline-hour">
+                    <div class="hour-label">15:00</div>
+                    <div class="timeline-blip blip-appointment" style="top: 55%; left: 50%;">
+                        <div class="blip-tooltip">
+                            <div class="tooltip-title">Vijay Singh</div>
+                            <div class="tooltip-detail">First Visit - General Health</div>
+                            <div class="tooltip-time">03:30 PM - 04:00 PM</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timeline-hour">
+                    <div class="hour-label">16:00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Patients by Severity -->
+        <div class="carousel-section">
+            <div class="carousel-header">
+                <div class="carousel-title">Patients — By Severity</div>
+                <div class="carousel-nav">
+                    <button class="carousel-btn" onclick="scrollCarousel('severity', -1)">←</button>
+                    <button class="carousel-btn" onclick="scrollCarousel('severity', 1)">→</button>
+                </div>
+            </div>
+            <div class="carousel-container">
+                <div class="carousel-track" id="severityCarousel">
+                    <div class="patient-card severity-critical">
+                        <div class="patient-header">
+                            <div class="patient-avatar">RK</div>
+                            <div class="patient-info">
+                                <div class="patient-name">Rajesh Kumar</div>
+                                <div class="patient-condition">Type 2 Diabetes</div>
+                            </div>
+                        </div>
+                        <div class="patient-meta">
+                            <div class="meta-badge badge-urgent">Critical</div>
+                            <div class="meta-badge badge-returning">Returning</div>
+                        </div>
+                        <div class="patient-metrics">
+                            <div class="metric-item">
+                                <div>Blood Sugar</div>
+                                <div class="metric-value">180 mg/dL</div>
+                            </div>
+                            <div class="metric-item">
+                                <div>Last Visit</div>
+                                <div class="metric-value">2 days ago</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="patient-card severity-critical">
+                        <div class="patient-header">
+                            <div class="patient-avatar">AP</div>
+                            <div class="patient-info">
+                                <div class="patient-name">Amit Patel</div>
+                                <div class="patient-condition">Cardiac Emergency</div>
+                            </div>
+                        </div>
+                        <div class="patient-meta">
+                            <div class="meta-badge badge-urgent">Critical</div>
+                            <div class="meta-badge badge-new">New</div>
+                        </div>
+                        <div class="patient-metrics">
+                            <div class="metric-item">
+                                <div>BP</div>
+                                <div class="metric-value">160/95</div>
+                            </div>
+                            <div class="metric-item">
+                                <div>Heart Rate</div>
+                                <div class="metric-value">102 bpm</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="patient-card severity-high">
+                        <div class="patient-header">
+                            <div class="patient-avatar">PS</div>
+                            <div class="patient-info">
+                                <div class="patient-name">Priya Sharma</div>
+                                <div class="patient-condition">Hypertension</div>
+                            </div>
+                        </div>
+                        <div class="patient-meta">
+                            <div class="meta-badge badge-returning">Returning</div>
+                        </div>
+                        <div class="patient-metrics">
+                            <div class="metric-item">
+                                <div>BP</div>
+                                <div class="metric-value">145/90</div>
+                            </div>
+                            <div class="metric-item">
+                                <div>Last Visit</div>
+                                <div class="metric-value">1 week ago</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="patient-card severity-moderate">
+                        <div class="patient-header">
+                            <div class="patient-avatar">SR</div>
+                            <div class="patient-info">
+                                <div class="patient-name">Sunita Reddy</div>
+                                <div class="patient-condition">Cardiac Review</div>
+                            </div>
+                        </div>
+                        <div class="patient-meta">
+                            <div class="meta-badge badge-returning">Follow-up</div>
+                        </div>
+                        <div class="patient-metrics">
+                            <div class="metric-item">
+                                <div>ECG</div>
+                                <div class="metric-value">Normal</div>
+                            </div>
+                            <div class="metric-item">
+                                <div>Last Visit</div>
+                                <div class="metric-value">2 weeks ago</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="patient-card severity-low">
+                        <div class="patient-header">
+                            <div class="patient-avatar">VS</div>
+                            <div class="patient-info">
+                                <div class="patient-name">Vijay Singh</div>
+                                <div class="patient-condition">General Health Check</div>
+                            </div>
+                        </div>
+                        <div class="patient-meta">
+                            <div class="meta-badge badge-new">New Patient</div>
+                        </div>
+                        <div class="patient-metrics">
+                            <div class="metric-item">
+                                <div>Age</div>
+                                <div class="metric-value">42 years</div>
+                            </div>
+                            <div class="metric-item">
+                                <div>Type</div>
+                                <div class="metric-value">Routine</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Appointments Carousel -->
+        <div class="carousel-section">
+            <div class="carousel-header">
+                <div class="carousel-title">Upcoming — Next 7 Days</div>
+                <div class="carousel-nav">
+                    <button class="carousel-btn" onclick="scrollCarousel('upcoming', -1)">←</button>
+                    <button class="carousel-btn" onclick="scrollCarousel('upcoming', 1)">→</button>
+                </div>
+            </div>
+            <div class="carousel-container">
+                <div class="carousel-track" id="upcomingCarousel">
+                    <div class="patient-card severity-moderate">
+                        <div class="patient-header">
+                            <div class="patient-avatar">MG</div>
+                            <div class="patient-info">
+                                <div class="patient-name">Meera Gupta</div>
+                                <div class="patient-condition">Thyroid Check</div>
+                            </div>
+                        </div>
+                        <div class="patient-meta">
+                            <div class="meta-badge badge-returning">Follow-up</div>
+                        </div>
+                        <div class="patient-metrics">
+                            <div class="metric-item">
+                                <div>Date</div>
+                                <div class="metric-value">Feb 20, 10:00 AM</div>
+                            </div>
+                            <div class="metric-item">
+                                <div>Reason</div>
+                                <div class="metric-value">Lab Results</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="patient-card severity-low">
+                        <div class="patient-header">
+                            <div class="patient-avatar">AK</div>
+                            <div class="patient-info">
+                                <div class="patient-name">Anil Kumar</div>
+                                <div class="patient-condition">Diabetes Follow-up</div>
+                            </div>
+                        </div>
+                        <div class="patient-meta">
+                            <div class="meta-badge badge-returning">Returning</div>
+                        </div>
+                        <div class="patient-metrics">
+                            <div class="metric-item">
+                                <div>Date</div>
+                                <div class="metric-value">Feb 21, 11:30 AM</div>
+                            </div>
+                            <div class="metric-item">
+                                <div>HbA1c</div>
+                                <div class="metric-value">7.2%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="patient-card severity-high">
+                        <div class="patient-header">
+                            <div class="patient-avatar">NK</div>
+                            <div class="patient-info">
+                                <div class="patient-name">Neha Kapoor</div>
+                                <div class="patient-condition">Post-Surgery Review</div>
+                            </div>
+                        </div>
+                        <div class="patient-meta">
+                            <div class="meta-badge badge-returning">Critical Follow-up</div>
+                        </div>
+                        <div class="patient-metrics">
+                            <div class="metric-item">
+                                <div>Date</div>
+                                <div class="metric-value">Feb 22, 09:00 AM</div>
+                            </div>
+                            <div class="metric-item">
+                                <div>Surgery</div>
+                                <div class="metric-value">7 days ago</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="patient-card severity-low">
+                        <div class="patient-header">
+                            <div class="patient-avatar">RP</div>
+                            <div class="patient-info">
+                                <div class="patient-name">Ravi Patel</div>
+                                <div class="patient-condition">Annual Physical</div>
+                            </div>
+                        </div>
+                        <div class="patient-meta">
+                            <div class="meta-badge badge-new">New</div>
+                        </div>
+                        <div class="patient-metrics">
+                            <div class="metric-item">
+                                <div>Date</div>
+                                <div class="metric-value">Feb 23, 02:00 PM</div>
+                            </div>
+                            <div class="metric-item">
+                                <div>Type</div>
+                                <div class="metric-value">Routine</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Cases Section -->
+        <div class="pending-section">
+            <div class="pending-card">
+                <div class="pending-header">
+                    <div class="pending-title">Pending Lab Reports</div>
+                    <div class="pending-count">4</div>
+                </div>
+                <div class="pending-list">
+                    <div class="pending-item">
+                        <div class="pending-item-info">
+                            <div class="pending-item-name">Rahul Mehta</div>
+                            <div class="pending-item-detail">Complete Blood Count (CBC)</div>
+                        </div>
+                        <div class="pending-time">2 days ago</div>
+                    </div>
+                    <div class="pending-item">
+                        <div class="pending-item-info">
+                            <div class="pending-item-name">Sneha Desai</div>
+                            <div class="pending-item-detail">Lipid Profile</div>
+                        </div>
+                        <div class="pending-time">1 day ago</div>
+                    </div>
+                    <div class="pending-item">
+                        <div class="pending-item-info">
+                            <div class="pending-item-name">Karan Shah</div>
+                            <div class="pending-item-detail">Thyroid Function Test</div>
+                        </div>
+                        <div class="pending-time">3 hours ago</div>
+                    </div>
+                    <div class="pending-item">
+                        <div class="pending-item-info">
+                            <div class="pending-item-name">Divya Nair</div>
+                            <div class="pending-item-detail">HbA1c Test</div>
+                        </div>
+                        <div class="pending-time">1 hour ago</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pending-card">
+                <div class="pending-header">
+                    <div class="pending-title">Awaiting Diagnosis</div>
+                    <div class="pending-count">3</div>
+                </div>
+                <div class="pending-list">
+                    <div class="pending-item">
+                        <div class="pending-item-info">
+                            <div class="pending-item-name">Pooja Joshi</div>
+                            <div class="pending-item-detail">Persistent Fatigue & Dizziness</div>
+                        </div>
+                        <div class="pending-time">5 days ago</div>
+                    </div>
+                    <div class="pending-item">
+                        <div class="pending-item-info">
+                            <div class="pending-item-name">Manish Verma</div>
+                            <div class="pending-item-detail">Chronic Back Pain</div>
+                        </div>
+                        <div class="pending-time">3 days ago</div>
+                    </div>
+                    <div class="pending-item">
+                        <div class="pending-item-info">
+                            <div class="pending-item-name">Anita Singh</div>
+                            <div class="pending-item-detail">Recurring Headaches</div>
+                        </div>
+                        <div class="pending-time">2 days ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title">Patient Severity Distribution</div>
+                <div class="chart-wrapper">
+                    <canvas id="severityChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">Weekly Patient Volume</div>
+                <div class="chart-wrapper">
+                    <canvas id="volumeChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">Patient Retention (Follow-up Rate)</div>
+                <div class="chart-wrapper">
+                    <canvas id="retentionChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">New vs Returning Patients</div>
+                <div class="chart-wrapper">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dark/Light Theme Toggle
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+        }
+
+        // Carousel Scroll Function
+        function scrollCarousel(type, direction) {
+            const carouselId = type === 'severity' ? 'severityCarousel' : 'upcomingCarousel';
+            const track = document.getElementById(carouselId);
+            const container = track.parentElement;
+            const cardWidth = track.querySelector('.patient-card').offsetWidth;
+            const gap = 20;
+            container.scrollBy({
+                left: direction * (cardWidth + gap),
+                behavior: 'smooth'
+            });
+        }
+
+        // Initialize Charts
+        const chartColors = {
+            primary: '#00ff88',
+            secondary: '#00ccff',
+            critical: '#ff3366',
+            warning: '#ffaa00',
+            dark: '#1a1a1a',
+            light: '#2a2a2a',
+            moderate: '#8b5cf6',
+            low: '#10b981'
+        };
+
+        const commonChartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#e0e0e0',
+                        padding: 12,
+                        font: { size: 11 }
+                    }
+                }
+            }
+        };
+
+        // Severity Distribution Chart (Doughnut)
+        const severityCtx = document.getElementById('severityChart').getContext('2d');
+        new Chart(severityCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Critical', 'High', 'Moderate', 'Low'],
+                datasets: [{
+                    data: [2, 5, 15, 28],
+                    backgroundColor: [
+                        chartColors.critical,
+                        chartColors.warning,
+                        chartColors.moderate,
+                        chartColors.low
+                    ],
+                    borderWidth: 0,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                ...commonChartOptions,
+                cutout: '65%',
+                plugins: {
+                    ...commonChartOptions.plugins,
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.parsed} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Weekly Volume Chart (Bar)
+        const volumeCtx = document.getElementById('volumeChart').getContext('2d');
+        new Chart(volumeCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Appointments',
+                    data: [12, 15, 8, 14, 16, 10, 6],
+                    backgroundColor: chartColors.primary,
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                ...commonChartOptions,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: { color: '#888', stepSize: 5 }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#888' }
+                    }
+                }
+            }
+        });
+
+        // Patient Retention Chart (Line)
+        const retentionCtx = document.getElementById('retentionChart').getContext('2d');
+        new Chart(retentionCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Follow-up Rate (%)',
+                    data: [65, 68, 72, 70, 75, 78],
+                    borderColor: chartColors.primary,
+                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: chartColors.primary,
+                    pointBorderColor: '#0a0a0a',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                ...commonChartOptions,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 60,
+                        max: 85,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: { 
+                            color: '#888',
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#888' }
+                    }
+                }
+            }
+        });
+
+        // New vs Returning Patients (Grouped Bar)
+        const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
+        new Chart(comparisonCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                datasets: [
+                    {
+                        label: 'New Patients',
+                        data: [3, 5, 2, 4, 6, 3],
+                        backgroundColor: chartColors.secondary,
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Returning',
+                        data: [9, 10, 6, 10, 10, 7],
+                        backgroundColor: chartColors.primary,
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                ...commonChartOptions,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: { color: '#888' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#888' }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

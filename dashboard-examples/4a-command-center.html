@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard — Command Center</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        /* ─── Top Bar ─── */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 28px;
+            border-bottom: 1px solid #1a1a1a;
+            position: sticky;
+            top: 0;
+            background: #0a0a0a;
+            z-index: 100;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+        }
+
+        .topbar-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .topbar-date {
+            font-size: 12px;
+            color: #555;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toggle-btn {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            padding: 7px 14px;
+            border-radius: 6px;
+            color: #888;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn:hover { background: #222; color: #ccc; }
+
+        .status-pill {
+            font-size: 11px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: rgba(0, 255, 136, 0.08);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.15);
+        }
+
+        /* ─── Stat Strip ─── */
+        .stat-strip {
+            display: flex;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .stat-strip-item {
+            flex: 1;
+            padding: 18px 24px;
+            border-right: 1px solid #1a1a1a;
+            transition: background 0.2s;
+        }
+
+        .stat-strip-item:last-child { border-right: none; }
+        .stat-strip-item:hover { background: #111; }
+
+        .strip-label {
+            font-size: 10px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+        }
+
+        .strip-row {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .strip-value {
+            font-size: 22px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .strip-delta {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .strip-delta.up { color: #00ff88; }
+        .strip-delta.down { color: #ff4444; }
+        .strip-delta.flat { color: #666; }
+
+        /* ─── Main Content ─── */
+        .main {
+            padding: 20px;
+        }
+
+        .chart-row {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .chart-row.full { grid-template-columns: 1fr; }
+        .chart-row.halves { grid-template-columns: 1fr 1fr; }
+        .chart-row.thirds { grid-template-columns: 1fr 1fr 1fr; }
+        .chart-row.split-wide { grid-template-columns: 5fr 3fr; }
+
+        .panel {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 22px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .panel-title {
+            font-size: 11px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        .panel-badge {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: #1a1a1a;
+            color: #888;
+        }
+
+        .chart-area { position: relative; height: 260px; }
+        .chart-area.tall { height: 320px; }
+        .chart-area.short { height: 200px; }
+
+        /* ─── Data Table ─── */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            font-size: 10px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: left;
+            padding: 10px 14px;
+            border-bottom: 1px solid #1a1a1a;
+            font-weight: 500;
+        }
+
+        .data-table td {
+            font-size: 13px;
+            color: #bbb;
+            padding: 11px 14px;
+            border-bottom: 1px solid #0f0f0f;
+        }
+
+        .data-table tbody tr { transition: background 0.15s; }
+        .data-table tbody tr:hover td { background: #151515; }
+
+        .severity-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .severity-dot.critical { background: #ff4444; box-shadow: 0 0 6px rgba(255,68,68,0.4); }
+        .severity-dot.high { background: #ffaa00; }
+        .severity-dot.moderate { background: #00aaff; }
+        .severity-dot.stable { background: #00ff88; }
+
+        .table-tag {
+            display: inline-block;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .tag-new { background: rgba(0,170,255,0.1); color: #00aaff; }
+        .tag-returning { background: rgba(0,255,136,0.1); color: #00ff88; }
+        .tag-urgent { background: rgba(255,68,68,0.1); color: #ff4444; }
+
+        /* ─── Light Mode ─── */
+        body.light-mode { background: #f5f5f7; color: #1a1a1a; }
+        body.light-mode .topbar { background: #f5f5f7; border-color: #e0e0e0; }
+        body.light-mode .topbar-title { color: #1a1a1a; }
+        body.light-mode .toggle-btn { background: #fff; border-color: #ddd; color: #666; }
+        body.light-mode .status-pill { background: rgba(0,200,100,0.08); border-color: rgba(0,200,100,0.15); color: #0a8a4a; }
+        body.light-mode .stat-strip { border-color: #e0e0e0; }
+        body.light-mode .stat-strip-item { border-color: #e8e8e8; }
+        body.light-mode .stat-strip-item:hover { background: #fff; }
+        body.light-mode .strip-value { color: #1a1a1a; }
+        body.light-mode .strip-label { color: #999; }
+        body.light-mode .panel { background: #fff; border-color: #e8e8e8; }
+        body.light-mode .panel-title { color: #999; }
+        body.light-mode .panel-badge { background: #f0f0f0; color: #666; }
+        body.light-mode .data-table th { color: #999; border-color: #e8e8e8; }
+        body.light-mode .data-table td { color: #333; border-color: #f0f0f0; }
+        body.light-mode .data-table tbody tr:hover td { background: #fafafa; }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 1100px) {
+            .chart-row.thirds { grid-template-columns: 1fr 1fr; }
+            .chart-row.split-wide { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .chart-row.halves, .chart-row.thirds { grid-template-columns: 1fr; }
+            .stat-strip { flex-wrap: wrap; }
+            .stat-strip-item { min-width: 50%; }
+        }
+
+        @media (max-width: 480px) {
+            .stat-strip-item { min-width: 100%; }
+            .topbar { padding: 12px 16px; }
+            .main { padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="topbar-title">Dr. Sharma</div>
+            <div class="topbar-date">Wed, 19 Feb 2026</div>
+        </div>
+        <div class="topbar-right">
+            <div class="status-pill">Online</div>
+            <button class="toggle-btn" onclick="document.body.classList.toggle('light-mode')">Theme</button>
+        </div>
+    </div>
+
+    <div class="stat-strip">
+        <div class="stat-strip-item">
+            <div class="strip-label">Today's Cases</div>
+            <div class="strip-row">
+                <div class="strip-value">8</div>
+                <div class="strip-delta up">+2 vs avg</div>
+            </div>
+        </div>
+        <div class="stat-strip-item">
+            <div class="strip-label">Critical</div>
+            <div class="strip-row">
+                <div class="strip-value">2</div>
+                <div class="strip-delta down">needs review</div>
+            </div>
+        </div>
+        <div class="stat-strip-item">
+            <div class="strip-label">Avg Wait</div>
+            <div class="strip-row">
+                <div class="strip-value">14m</div>
+                <div class="strip-delta up">-3m</div>
+            </div>
+        </div>
+        <div class="stat-strip-item">
+            <div class="strip-label">Retention</div>
+            <div class="strip-row">
+                <div class="strip-value">78%</div>
+                <div class="strip-delta up">+12%</div>
+            </div>
+        </div>
+        <div class="stat-strip-item">
+            <div class="strip-label">This Week</div>
+            <div class="strip-row">
+                <div class="strip-value">47</div>
+                <div class="strip-delta flat">on track</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+        <!-- Row 1: Full-width daily flow -->
+        <div class="chart-row full">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Patient Flow — Today</div>
+                    <div class="panel-badge">Live</div>
+                </div>
+                <div class="chart-area tall">
+                    <canvas id="flowChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Three charts -->
+        <div class="chart-row thirds">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Severity Breakdown</div>
+                    <div class="panel-badge">50 patients</div>
+                </div>
+                <div class="chart-area">
+                    <canvas id="severityChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Conditions Treated</div>
+                    <div class="panel-badge">This month</div>
+                </div>
+                <div class="chart-area">
+                    <canvas id="conditionsChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Wait Time Distribution</div>
+                    <div class="panel-badge">Avg 14 min</div>
+                </div>
+                <div class="chart-area">
+                    <canvas id="waitChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Two charts -->
+        <div class="chart-row halves">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Weekly Overview</div>
+                    <div class="panel-badge">Appointments + Cancellations</div>
+                </div>
+                <div class="chart-area">
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Department Scores</div>
+                    <div class="panel-badge">Q1 2026</div>
+                </div>
+                <div class="chart-area">
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 4: Table + Chart -->
+        <div class="chart-row split-wide">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Recent Patients</div>
+                    <div class="panel-badge">Today</div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Condition</th>
+                            <th>Status</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="severity-dot critical"></span>Rajesh Kumar</td>
+                            <td>Uncontrolled diabetes, HbA1c 9.2%</td>
+                            <td><span class="table-tag tag-urgent">Critical</span></td>
+                            <td>09:00</td>
+                        </tr>
+                        <tr>
+                            <td><span class="severity-dot high"></span>Priya Sharma</td>
+                            <td>Hypertension follow-up, BP 145/92</td>
+                            <td><span class="table-tag tag-returning">Returning</span></td>
+                            <td>10:30</td>
+                        </tr>
+                        <tr>
+                            <td><span class="severity-dot critical"></span>Amit Patel</td>
+                            <td>Chest pain, rule out ACS</td>
+                            <td><span class="table-tag tag-new">Walk-in</span></td>
+                            <td>11:15</td>
+                        </tr>
+                        <tr>
+                            <td><span class="severity-dot moderate"></span>Sunita Reddy</td>
+                            <td>Post-stent ECG review</td>
+                            <td><span class="table-tag tag-returning">Follow-up</span></td>
+                            <td>14:00</td>
+                        </tr>
+                        <tr>
+                            <td><span class="severity-dot stable"></span>Vijay Singh</td>
+                            <td>Annual physical, no complaints</td>
+                            <td><span class="table-tag tag-new">New</span></td>
+                            <td>15:30</td>
+                        </tr>
+                        <tr>
+                            <td><span class="severity-dot moderate"></span>Meera Gupta</td>
+                            <td>TSH elevated, dose adjustment</td>
+                            <td><span class="table-tag tag-returning">Returning</span></td>
+                            <td>16:00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">New vs Returning</div>
+                    <div class="panel-badge">6 months</div>
+                </div>
+                <div class="chart-area">
+                    <canvas id="compChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const C = {
+            green: '#00ff88',
+            blue: '#00aaff',
+            red: '#ff4444',
+            amber: '#ffaa00',
+            purple: '#8b5cf6',
+            teal: '#14b8a6',
+            grid: 'rgba(255,255,255,0.04)',
+            tick: '#555'
+        };
+
+        const baseScales = {
+            y: {
+                beginAtZero: true,
+                grid: { color: C.grid },
+                ticks: { color: C.tick, font: { size: 11 } }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { color: C.tick, font: { size: 11 } }
+            }
+        };
+
+        // 1. Patient Flow (area chart, hourly)
+        new Chart(document.getElementById('flowChart'), {
+            type: 'line',
+            data: {
+                labels: ['7am','8am','9am','10am','11am','12pm','1pm','2pm','3pm','4pm','5pm'],
+                datasets: [{
+                    label: 'Check-ins',
+                    data: [0, 1, 3, 2, 4, 1, 0, 2, 3, 1, 0],
+                    borderColor: C.green,
+                    backgroundColor: 'rgba(0,255,136,0.08)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: C.green,
+                    pointBorderColor: '#0a0a0a',
+                    pointBorderWidth: 2
+                }, {
+                    label: 'Completed',
+                    data: [0, 0, 1, 2, 2, 3, 1, 0, 1, 2, 1],
+                    borderColor: C.blue,
+                    backgroundColor: 'rgba(0,170,255,0.06)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointBackgroundColor: C.blue,
+                    pointBorderColor: '#0a0a0a',
+                    pointBorderWidth: 2,
+                    borderDash: [4, 3]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: { color: '#888', boxWidth: 12, padding: 16, font: { size: 11 } }
+                    }
+                },
+                scales: baseScales
+            }
+        });
+
+        // 2. Severity Doughnut
+        new Chart(document.getElementById('severityChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Critical', 'High', 'Moderate', 'Stable'],
+                datasets: [{
+                    data: [2, 5, 15, 28],
+                    backgroundColor: [C.red, C.amber, C.blue, C.green],
+                    borderWidth: 0,
+                    borderRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '68%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#888', padding: 14, font: { size: 11 } }
+                    }
+                }
+            }
+        });
+
+        // 3. Conditions (Polar Area)
+        new Chart(document.getElementById('conditionsChart'), {
+            type: 'polarArea',
+            data: {
+                labels: ['Diabetes', 'Cardiac', 'Hypertension', 'Thyroid', 'Respiratory', 'Other'],
+                datasets: [{
+                    data: [14, 9, 11, 6, 4, 6],
+                    backgroundColor: [
+                        'rgba(0,255,136,0.5)',
+                        'rgba(255,68,68,0.5)',
+                        'rgba(0,170,255,0.5)',
+                        'rgba(139,92,246,0.5)',
+                        'rgba(255,170,0,0.5)',
+                        'rgba(100,100,100,0.4)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#888', padding: 10, font: { size: 10 } }
+                    }
+                },
+                scales: {
+                    r: {
+                        grid: { color: 'rgba(255,255,255,0.06)' },
+                        ticks: { display: false }
+                    }
+                }
+            }
+        });
+
+        // 4. Wait Time (Bar)
+        new Chart(document.getElementById('waitChart'), {
+            type: 'bar',
+            data: {
+                labels: ['<5m', '5-10m', '10-15m', '15-20m', '20-30m', '30m+'],
+                datasets: [{
+                    label: 'Patients',
+                    data: [4, 11, 16, 8, 6, 3],
+                    backgroundColor: function(ctx) {
+                        const val = ctx.parsed?.y || 0;
+                        if (val >= 15) return C.green;
+                        if (val >= 8) return C.blue;
+                        return 'rgba(255,255,255,0.15)';
+                    },
+                    borderRadius: 4,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: baseScales
+            }
+        });
+
+        // 5. Weekly Overview (Mixed bar + line)
+        new Chart(document.getElementById('weeklyChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                datasets: [{
+                    type: 'bar',
+                    label: 'Booked',
+                    data: [12, 15, 9, 14, 16, 8],
+                    backgroundColor: C.green,
+                    borderRadius: 5,
+                    borderSkipped: false,
+                    order: 2
+                }, {
+                    type: 'bar',
+                    label: 'Cancelled',
+                    data: [1, 2, 0, 3, 1, 0],
+                    backgroundColor: 'rgba(255,68,68,0.6)',
+                    borderRadius: 5,
+                    borderSkipped: false,
+                    order: 2
+                }, {
+                    type: 'line',
+                    label: 'Avg Wait (min)',
+                    data: [12, 16, 11, 18, 14, 9],
+                    borderColor: C.amber,
+                    borderWidth: 2,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointBackgroundColor: C.amber,
+                    yAxisID: 'y1',
+                    order: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#888', boxWidth: 10, padding: 14, font: { size: 10 } }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: C.grid }, ticks: { color: C.tick, font: { size: 10 } } },
+                    y1: {
+                        position: 'right',
+                        beginAtZero: true,
+                        grid: { display: false },
+                        ticks: { color: C.amber, font: { size: 10 }, callback: v => v + 'm' }
+                    },
+                    x: { grid: { display: false }, ticks: { color: C.tick, font: { size: 10 } } }
+                }
+            }
+        });
+
+        // 6. Department Radar
+        new Chart(document.getElementById('radarChart'), {
+            type: 'radar',
+            data: {
+                labels: ['Efficiency', 'Satisfaction', 'Wait Time', 'Follow-up', 'Documentation', 'Referrals'],
+                datasets: [{
+                    label: 'Your Dept',
+                    data: [82, 91, 74, 78, 68, 85],
+                    borderColor: C.green,
+                    backgroundColor: 'rgba(0,255,136,0.1)',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointBackgroundColor: C.green
+                }, {
+                    label: 'Hospital Avg',
+                    data: [70, 75, 80, 65, 72, 70],
+                    borderColor: '#555',
+                    backgroundColor: 'rgba(100,100,100,0.05)',
+                    borderWidth: 1,
+                    borderDash: [4, 3],
+                    pointRadius: 2,
+                    pointBackgroundColor: '#555'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#888', boxWidth: 10, padding: 14, font: { size: 10 } }
+                    }
+                },
+                scales: {
+                    r: {
+                        grid: { color: 'rgba(255,255,255,0.06)' },
+                        angleLines: { color: 'rgba(255,255,255,0.06)' },
+                        ticks: { display: false },
+                        pointLabels: { color: '#888', font: { size: 10 } },
+                        suggestedMin: 40,
+                        suggestedMax: 100
+                    }
+                }
+            }
+        });
+
+        // 7. New vs Returning (stacked)
+        new Chart(document.getElementById('compChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+                datasets: [{
+                    label: 'Returning',
+                    data: [28, 32, 26, 30, 35, 38],
+                    backgroundColor: C.green,
+                    borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 4, bottomRight: 4 }
+                }, {
+                    label: 'New',
+                    data: [8, 6, 10, 7, 9, 12],
+                    backgroundColor: C.blue,
+                    borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 }
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#888', boxWidth: 10, padding: 12, font: { size: 10 } }
+                    }
+                },
+                scales: {
+                    y: { stacked: true, beginAtZero: true, grid: { color: C.grid }, ticks: { color: C.tick, font: { size: 10 } } },
+                    x: { stacked: true, grid: { display: false }, ticks: { color: C.tick, font: { size: 10 } } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -3,7 +3,8 @@ import type {
   Appointment, 
   AppointmentsResponse, 
   CreateAppointmentRequest, 
-  UpdateAppointmentStatusRequest 
+  UpdateAppointmentStatusRequest,
+  BookedSlotsResponse
 } from '@/types/appointment';
 
 export const appointmentsService = {
@@ -39,6 +40,16 @@ export const appointmentsService = {
    */
   updateStatus: async (id: string, data: UpdateAppointmentStatusRequest): Promise<Appointment> => {
     const response = await api.patch<Appointment>(`/appointments/${id}/status`, data);
+    return response.data;
+  },
+
+  /**
+   * Get booked time slots for a doctor on a specific date
+   */
+  getBookedSlots: async (doctorId: string, date: string): Promise<BookedSlotsResponse> => {
+    const response = await api.get<BookedSlotsResponse>('/appointments/booked-slots', {
+      params: { doctor_id: doctorId, date },
+    });
     return response.data;
   },
 };

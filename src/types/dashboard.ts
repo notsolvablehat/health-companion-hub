@@ -62,6 +62,7 @@ export interface PatientDashboardData {
     chat_count: number;
     analyses_count: number;
   };
+  notifications_unread: number;
 }
 
 // Doctor Dashboard Types
@@ -113,4 +114,68 @@ export interface DoctorDashboardData {
     chat_count: number;
     analyses_count: number;
   };
+  notifications_unread: number;
+}
+
+// --- Analytics Types ---
+
+export interface MonthCount {
+  month: string;
+  count: number;
+}
+
+export interface TypeCount {
+  type: string;
+  count: number;
+}
+
+// Patient Analytics
+export interface PatientAnalyticsData {
+  appointments: {
+    total: number;
+    upcoming: number;
+    completed: number;
+    cancelled: number;
+    no_show: number;
+    by_month: MonthCount[];
+    by_type: TypeCount[];
+    next_appointment: {
+      id: string;
+      doctor_name: string;
+      start_time: string;
+      type: string;
+      reason: string;
+    } | null;
+  };
+  medications: string[];
+  vitals: {
+    blood_group: string | null;
+    height_cm: number | null;
+    weight_kg: number | null;
+  } | null;
+  reports_by_month: MonthCount[];
+  cases_by_month: MonthCount[];
+}
+
+// Doctor Analytics
+export interface DoctorAnalyticsData {
+  appointments: {
+    total: number;
+    today: number;
+    upcoming_week: number;
+    completed: number;
+    cancelled: number;
+    no_show: number;
+    by_month: MonthCount[];
+    by_type: TypeCount[];
+    completion_rate: number;
+  };
+  patient_demographics: {
+    by_gender: TypeCount[];
+    by_age_group: TypeCount[];
+  };
+  cases_by_month: MonthCount[];
+  cases_by_type: TypeCount[];
+  reports_analyzed: number;
+  reports_pending: number;
 }

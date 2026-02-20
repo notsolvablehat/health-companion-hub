@@ -3,6 +3,21 @@
 export type ReportStatus = 'pending' | 'uploaded' | 'processing' | 'analyzed' | 'failed';
 export type FileType = 'pdf' | 'image';
 
+// Available patients for doctor report upload
+export interface AvailablePatient {
+  user_id: string;
+  patient_id: string;
+  name: string;
+  email: string;
+  gender?: string;
+  date_of_birth?: string;
+}
+
+export interface AvailablePatientsResponse {
+  total: number;
+  patients: AvailablePatient[];
+}
+
 export interface Report {
   id: string;
   patient_id: string;

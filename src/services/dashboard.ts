@@ -1,5 +1,10 @@
 import { api } from './api';
-import type { PatientDashboardData, DoctorDashboardData } from '@/types/dashboard';
+import type {
+  PatientDashboardData,
+  DoctorDashboardData,
+  PatientAnalyticsData,
+  DoctorAnalyticsData,
+} from '@/types/dashboard';
 
 export interface DashboardQueryParams {
   cases_page?: number;
@@ -25,6 +30,14 @@ export const dashboardService = {
   },
 
   /**
+   * Get patient analytics data (charts & trends)
+   */
+  getPatientAnalytics: async (): Promise<PatientAnalyticsData> => {
+    const response = await api.get<PatientAnalyticsData>('/patient/analytics');
+    return response.data;
+  },
+
+  /**
    * Get doctor dashboard data
    */
   getDoctorDashboard: async (params?: DashboardQueryParams): Promise<DoctorDashboardData> => {
@@ -34,6 +47,14 @@ export const dashboardService = {
         cases_limit: params?.cases_limit ?? 10,
       },
     });
+    return response.data;
+  },
+
+  /**
+   * Get doctor analytics data (charts & demographics)
+   */
+  getDoctorAnalytics: async (): Promise<DoctorAnalyticsData> => {
+    const response = await api.get<DoctorAnalyticsData>('/doctor/analytics');
     return response.data;
   },
 };

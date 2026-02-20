@@ -10,10 +10,19 @@ import type {
   ConfirmUploadRequest,
   DownloadUrlResponse,
   ReportActivityResponse,
+  AvailablePatientsResponse,
 } from '@/types/report';
 import { FILE_UPLOAD } from '@/lib/constants';
 
 export const reportsService = {
+  /**
+   * Get available patients for doctor to upload reports for
+   */
+  getAvailablePatients: async (): Promise<AvailablePatientsResponse> => {
+    const response = await api.get<AvailablePatientsResponse>('/reports/available-patients');
+    return response.data;
+  },
+
   /**
    * Get a signed upload URL from backend
    */

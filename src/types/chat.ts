@@ -57,3 +57,12 @@ export interface UpdateChatReportsRequest {
   report_ids: string[];
   action: 'add' | 'remove' | 'replace';
 }
+
+// Voice chat types
+export type VoiceLanguage = 'english' | 'kannada' | 'hindi';
+
+export interface SendVoiceMessageRequest {
+  audioBlob: Blob;
+  language?: VoiceLanguage;
+  attachReportIds?: string[];
+}

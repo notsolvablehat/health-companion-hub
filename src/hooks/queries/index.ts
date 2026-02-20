@@ -81,6 +81,7 @@ export {
   useChatHistory,
   useStartChat as useCreateChat,
   useSendMessage as useSendChatMessage,
+  useSendVoiceMessage,
   useDeleteChat as useRemoveChat,
   useUpdateChatReports as useModifyChatReports,
   usePrefetchChat as usePrefetchChatHistory,

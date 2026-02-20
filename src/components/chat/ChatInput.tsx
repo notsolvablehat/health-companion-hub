@@ -1,21 +1,27 @@
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { Send, Paperclip } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { VoiceRecorder } from './VoiceRecorder';
+import type { VoiceLanguage } from '@/types/chat';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
+  onSendVoice?: (audioBlob: Blob, language: VoiceLanguage) => void;
   disabled?: boolean;
   isLoading?: boolean;
+  isVoiceProcessing?: boolean;
   placeholder?: string;
   maxLength?: number;
 }
 
 export function ChatInput({
   onSend,
+  onSendVoice,
   disabled = false,
   isLoading = false,
+  isVoiceProcessing = false,
   placeholder = 'Type your message...',
   maxLength = 2000,
 }: ChatInputProps) {
@@ -70,7 +76,7 @@ export function ChatInput({
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            disabled={disabled || isLoading}
+            disabled={disabled || isLoading || isVoiceProcessing}
             className={cn(
               'min-h-[44px] max-h-[120px] resize-none pr-16',
               isOverLimit && 'border-destructive focus-visible:ring-destructive'
@@ -87,6 +93,15 @@ export function ChatInput({
             {message.length}/{maxLength}
           </div>
         </div>
+
+        {/* Voice Recorder */}
+        {onSendVoice && (
+          <VoiceRecorder
+            onRecordingComplete={onSendVoice}
+            disabled={disabled || isLoading}
+            isProcessing={isVoiceProcessing}
+          />
+        )}
         
         <Button
           type="button"
@@ -100,9 +115,8 @@ export function ChatInput({
         </Button>
       </div>
       
-      <p className="text-xs text-muted-foreground mt-3">
-        Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd> to send,{' '}
-        <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Shift+Enter</kbd> for new line
+      <p className="text-xs text-muted-foreground mt-3 text-center">
+        AI can make mistakes. Please verify important medical information with your doctor.
       </p>
     </div>
   );

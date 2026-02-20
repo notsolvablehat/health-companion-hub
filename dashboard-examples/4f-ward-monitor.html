@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard — Ward Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        /* ─── Top Bar ─── */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            border-bottom: 1px solid #1a1a1a;
+            position: sticky;
+            top: 0;
+            background: #0a0a0a;
+            z-index: 100;
+        }
+
+        .tb-left { display: flex; align-items: center; gap: 16px; }
+        .tb-title { font-size: 14px; font-weight: 600; color: #fff; }
+        .tb-sub { font-size: 11px; color: #555; }
+        .tb-right { display: flex; align-items: center; gap: 10px; }
+
+        .ward-tag {
+            font-size: 10px; padding: 4px 10px;
+            border-radius: 4px; letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .ward-tag.beds { background: rgba(0,170,255,0.1); color: #00aaff; }
+        .ward-tag.alerts { background: rgba(255,68,68,0.1); color: #ff4444; }
+
+        .btn-sm {
+            background: #1a1a1a; border: 1px solid #222;
+            padding: 6px 14px; border-radius: 6px;
+            color: #888; font-size: 11px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-sm:hover { background: #222; color: #ccc; }
+
+        /* ─── Content ─── */
+        .content { padding: 20px 24px; }
+
+        .section-label {
+            font-size: 10px; color: #444;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        /* ─── Patient Tiles ─── */
+        .tile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .tile {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 14px;
+            position: relative;
+            transition: all 0.2s;
+            border-left: 3px solid var(--acuity);
+        }
+
+        .tile:hover { background: #151515; border-color: #2a2a2a; border-left-color: var(--acuity); }
+
+        .tile.acuity-1 { --acuity: #ff4444; }
+        .tile.acuity-2 { --acuity: #ffaa00; }
+        .tile.acuity-3 { --acuity: #00aaff; }
+        .tile.acuity-4 { --acuity: #00ff88; }
+
+        .tile-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .tile-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #ccc;
+        }
+
+        .tile-bed {
+            font-size: 10px;
+            color: #555;
+        }
+
+        .tile-mews {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .mews-low { background: rgba(0,255,136,0.1); color: #00ff88; }
+        .mews-med { background: rgba(255,170,0,0.1); color: #ffaa00; }
+        .mews-high { background: rgba(255,68,68,0.1); color: #ff4444; }
+
+        .tile-vitals {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .vital {
+            font-size: 10px;
+            color: #666;
+        }
+
+        .vital-val {
+            font-size: 12px;
+            font-weight: 500;
+            color: #bbb;
+        }
+
+        .vital-val.warn { color: #ffaa00; }
+        .vital-val.crit { color: #ff4444; }
+
+        .tile-dx {
+            margin-top: 8px;
+            font-size: 10px;
+            color: #555;
+            padding-top: 8px;
+            border-top: 1px solid #1a1a1a;
+        }
+
+        /* ─── Chart Rows ─── */
+        .row { display: grid; gap: 16px; margin-bottom: 16px; }
+        .row-2 { grid-template-columns: 1fr 1fr; }
+        .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .row-wide { grid-template-columns: 5fr 3fr; }
+
+        .panel {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .p-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .p-t {
+            font-size: 11px; color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.8px; font-weight: 500;
+        }
+
+        .p-badge {
+            font-size: 10px; padding: 3px 8px;
+            border-radius: 4px; background: #1a1a1a; color: #666;
+        }
+
+        .c-box { position: relative; height: 250px; }
+        .c-box.tall { height: 300px; }
+        .c-box.short { height: 200px; }
+
+        /* ─── Summary Strip ─── */
+        .sum-strip {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .sum-card {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .sum-num {
+            font-size: 22px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .sum-label {
+            font-size: 10px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sum-sub {
+            font-size: 10px;
+            margin-top: 4px;
+        }
+
+        .sum-sub.good { color: #00ff88; }
+        .sum-sub.bad { color: #ff4444; }
+        .sum-sub.meh { color: #ffaa00; }
+
+        /* ─── Light Mode ─── */
+        body.light-mode { background: #f5f5f7; }
+        body.light-mode .topbar { background: #f5f5f7; border-color: #e0e0e0; }
+        body.light-mode .tb-title { color: #1a1a1a; }
+        body.light-mode .tile { background: #fff; border-color: #e8e8e8; }
+        body.light-mode .tile:hover { background: #fafafa; border-color: #ddd; }
+        body.light-mode .tile-name { color: #333; }
+        body.light-mode .tile-dx { border-color: #eee; }
+        body.light-mode .vital-val { color: #333; }
+        body.light-mode .panel, body.light-mode .sum-card { background: #fff; border-color: #e8e8e8; }
+        body.light-mode .sum-num { color: #1a1a1a; }
+        body.light-mode .p-t, body.light-mode .section-label, body.light-mode .sum-label { color: #999; }
+        body.light-mode .p-badge { background: #f0f0f0; color: #888; }
+        body.light-mode .btn-sm { background: #fff; border-color: #ddd; color: #666; }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 1100px) {
+            .row-3 { grid-template-columns: 1fr 1fr; }
+            .row-wide { grid-template-columns: 1fr; }
+            .sum-strip { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .row-2, .row-3 { grid-template-columns: 1fr; }
+            .sum-strip { grid-template-columns: 1fr 1fr; }
+            .tile-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+            .content { padding: 16px; }
+        }
+
+        @media (max-width: 480px) {
+            .sum-strip { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="tb-left">
+            <div class="tb-title">Ward Monitor</div>
+            <div class="tb-sub">Dr. Sharma · General Ward B · 19 Feb 2026, 14:32</div>
+        </div>
+        <div class="tb-right">
+            <span class="ward-tag beds">24/29 beds</span>
+            <span class="ward-tag alerts">2 alerts</span>
+            <button class="btn-sm" onclick="document.body.classList.toggle('light-mode')">Theme</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <!-- Ward Summary Strip -->
+        <div class="section-label">Ward at a Glance</div>
+        <div class="sum-strip">
+            <div class="sum-card">
+                <div class="sum-num">24</div>
+                <div class="sum-label">Occupied</div>
+                <div class="sum-sub meh">83% occupancy</div>
+            </div>
+            <div class="sum-card">
+                <div class="sum-num">3</div>
+                <div class="sum-label">MEWS ≥ 5</div>
+                <div class="sum-sub bad">escalation review</div>
+            </div>
+            <div class="sum-card">
+                <div class="sum-num">6</div>
+                <div class="sum-label">Pending Discharge</div>
+                <div class="sum-sub good">2 orders signed</div>
+            </div>
+            <div class="sum-card">
+                <div class="sum-num">4</div>
+                <div class="sum-label">Labs Pending</div>
+                <div class="sum-sub meh">avg 48m</div>
+            </div>
+            <div class="sum-card">
+                <div class="sum-num">3.8d</div>
+                <div class="sum-label">Avg LOS</div>
+                <div class="sum-sub good">under 4.2d target</div>
+            </div>
+        </div>
+
+        <!-- Patient Tiles -->
+        <div class="section-label">Patients — By Acuity</div>
+        <div class="tile-grid">
+            <div class="tile acuity-1">
+                <div class="tile-top">
+                    <div>
+                        <div class="tile-name">Amit Patel</div>
+                        <div class="tile-bed">Bed 4 · Day 1</div>
+                    </div>
+                    <div class="tile-mews mews-high">MEWS 7</div>
+                </div>
+                <div class="tile-vitals">
+                    <div class="vital">HR <div class="vital-val crit">118</div></div>
+                    <div class="vital">BP <div class="vital-val crit">92/58</div></div>
+                    <div class="vital">SpO₂ <div class="vital-val warn">91%</div></div>
+                    <div class="vital">Temp <div class="vital-val">37.8°C</div></div>
+                </div>
+                <div class="tile-dx">NSTEMI, Troponin 2.4 ng/mL ↑</div>
+            </div>
+
+            <div class="tile acuity-1">
+                <div class="tile-top">
+                    <div>
+                        <div class="tile-name">Rajesh Kumar</div>
+                        <div class="tile-bed">Bed 7 · Day 3</div>
+                    </div>
+                    <div class="tile-mews mews-high">MEWS 6</div>
+                </div>
+                <div class="tile-vitals">
+                    <div class="vital">HR <div class="vital-val warn">98</div></div>
+                    <div class="vital">BP <div class="vital-val warn">158/96</div></div>
+                    <div class="vital">RBS <div class="vital-val crit">312</div></div>
+                    <div class="vital">Temp <div class="vital-val">36.9°C</div></div>
+                </div>
+                <div class="tile-dx">DKA resolving, insulin drip ongoing</div>
+            </div>
+
+            <div class="tile acuity-2">
+                <div class="tile-top">
+                    <div>
+                        <div class="tile-name">Sneha Desai</div>
+                        <div class="tile-bed">Bed 12 · Day 2</div>
+                    </div>
+                    <div class="tile-mews mews-med">MEWS 5</div>
+                </div>
+                <div class="tile-vitals">
+                    <div class="vital">HR <div class="vital-val">82</div></div>
+                    <div class="vital">BP <div class="vital-val warn">148/92</div></div>
+                    <div class="vital">SpO₂ <div class="vital-val">96%</div></div>
+                    <div class="vital">Temp <div class="vital-val warn">38.4°C</div></div>
+                </div>
+                <div class="tile-dx">Pyelonephritis, IV Ceftriaxone Day 2</div>
+            </div>
+
+            <div class="tile acuity-2">
+                <div class="tile-top">
+                    <div>
+                        <div class="tile-name">Karan Shah</div>
+                        <div class="tile-bed">Bed 15 · Day 4</div>
+                    </div>
+                    <div class="tile-mews mews-med">MEWS 4</div>
+                </div>
+                <div class="tile-vitals">
+                    <div class="vital">HR <div class="vital-val">76</div></div>
+                    <div class="vital">BP <div class="vital-val">132/84</div></div>
+                    <div class="vital">TSH <div class="vital-val warn">8.4</div></div>
+                    <div class="vital">eGFR <div class="vital-val warn">42</div></div>
+                </div>
+                <div class="tile-dx">Myxedema, dose adjustment pending</div>
+            </div>
+
+            <div class="tile acuity-3">
+                <div class="tile-top">
+                    <div>
+                        <div class="tile-name">Priya Sharma</div>
+                        <div class="tile-bed">Bed 9 · Day 2</div>
+                    </div>
+                    <div class="tile-mews mews-low">MEWS 2</div>
+                </div>
+                <div class="tile-vitals">
+                    <div class="vital">HR <div class="vital-val">72</div></div>
+                    <div class="vital">BP <div class="vital-val">134/86</div></div>
+                    <div class="vital">SpO₂ <div class="vital-val">98%</div></div>
+                    <div class="vital">Temp <div class="vital-val">36.8°C</div></div>
+                </div>
+                <div class="tile-dx">HTN titration, Amlodipine 10mg started</div>
+            </div>
+
+            <div class="tile acuity-3">
+                <div class="tile-top">
+                    <div>
+                        <div class="tile-name">Meera Gupta</div>
+                        <div class="tile-bed">Bed 18 · Day 5</div>
+                    </div>
+                    <div class="tile-mews mews-low">MEWS 1</div>
+                </div>
+                <div class="tile-vitals">
+                    <div class="vital">HR <div class="vital-val">68</div></div>
+                    <div class="vital">BP <div class="vital-val">122/78</div></div>
+                    <div class="vital">HbA1c <div class="vital-val">7.1%</div></div>
+                    <div class="vital">Cr <div class="vital-val">0.9</div></div>
+                </div>
+                <div class="tile-dx">DM2, stable. Discharge plan ready</div>
+            </div>
+
+            <div class="tile acuity-4">
+                <div class="tile-top">
+                    <div>
+                        <div class="tile-name">Vijay Singh</div>
+                        <div class="tile-bed">Bed 22 · Day 1</div>
+                    </div>
+                    <div class="tile-mews mews-low">MEWS 0</div>
+                </div>
+                <div class="tile-vitals">
+                    <div class="vital">HR <div class="vital-val">70</div></div>
+                    <div class="vital">BP <div class="vital-val">120/76</div></div>
+                    <div class="vital">SpO₂ <div class="vital-val">99%</div></div>
+                    <div class="vital">Temp <div class="vital-val">36.6°C</div></div>
+                </div>
+                <div class="tile-dx">Observation, rule out syncope</div>
+            </div>
+
+            <div class="tile acuity-4">
+                <div class="tile-top">
+                    <div>
+                        <div class="tile-name">Sunita Reddy</div>
+                        <div class="tile-bed">Bed 25 · Day 3</div>
+                    </div>
+                    <div class="tile-mews mews-low">MEWS 1</div>
+                </div>
+                <div class="tile-vitals">
+                    <div class="vital">HR <div class="vital-val">64</div></div>
+                    <div class="vital">BP <div class="vital-val">118/72</div></div>
+                    <div class="vital">SpO₂ <div class="vital-val">98%</div></div>
+                    <div class="vital">ECG <div class="vital-val">NSR</div></div>
+                </div>
+                <div class="tile-dx">Post-stent, stable. Echo pending</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="section-label">Clinical Analytics</div>
+
+        <!-- Row 1 -->
+        <div class="row row-wide">
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">MEWS Distribution — Current Ward</div>
+                    <div class="p-badge">n=24</div>
+                </div>
+                <div class="c-box">
+                    <canvas id="mewsChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">Acuity Mix</div>
+                    <div class="p-badge">Right now</div>
+                </div>
+                <div class="c-box">
+                    <canvas id="acuityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2 -->
+        <div class="row row-3">
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">Glycemic Control — In-Range %</div>
+                    <div class="p-badge">70-180 mg/dL target</div>
+                </div>
+                <div class="c-box short">
+                    <canvas id="glycChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">Fluid Balance — 24h</div>
+                    <div class="p-badge">ml net</div>
+                </div>
+                <div class="c-box short">
+                    <canvas id="fluidChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">Antibiotic Days</div>
+                    <div class="p-badge">Active courses</div>
+                </div>
+                <div class="c-box short">
+                    <canvas id="abxChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3 -->
+        <div class="row row-2">
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">Vital Trend — Amit Patel (Bed 4)</div>
+                    <div class="p-badge">Last 12 hours</div>
+                </div>
+                <div class="c-box tall">
+                    <canvas id="vitalChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">Length of Stay — Discharge Readiness</div>
+                    <div class="p-badge">Expected vs actual</div>
+                </div>
+                <div class="c-box tall">
+                    <canvas id="losChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 4 -->
+        <div class="row row-2">
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">Escalation Events — 7 Days</div>
+                    <div class="p-badge">RRT + Code Blue</div>
+                </div>
+                <div class="c-box">
+                    <canvas id="escChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">Nursing Workload Score</div>
+                    <div class="p-badge">By shift</div>
+                </div>
+                <div class="c-box">
+                    <canvas id="workloadChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const C = {
+            g: '#00ff88', b: '#00aaff', r: '#ff4444', a: '#ffaa00',
+            p: '#8b5cf6', t: '#14b8a6',
+            grid: 'rgba(255,255,255,0.04)', tick: '#555'
+        };
+
+        const S = {
+            y: { beginAtZero: true, grid: { color: C.grid }, ticks: { color: C.tick, font: { size: 10 } } },
+            x: { grid: { display: false }, ticks: { color: C.tick, font: { size: 10 } } }
+        };
+
+        const leg = { position: 'bottom', labels: { color: '#888', boxWidth: 10, padding: 12, font: { size: 10 } } };
+
+        // 1. MEWS Distribution
+        new Chart(document.getElementById('mewsChart'), {
+            type: 'bar',
+            data: {
+                labels: ['0', '1', '2', '3', '4', '5', '6', '7+'],
+                datasets: [{
+                    label: 'Patients',
+                    data: [4, 5, 6, 3, 2, 2, 1, 1],
+                    backgroundColor: function(ctx) {
+                        const i = ctx.dataIndex;
+                        if (i <= 2) return C.g;
+                        if (i <= 4) return C.a;
+                        return C.r;
+                    },
+                    borderRadius: 4, borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    ...S,
+                    x: { ...S.x, title: { display: true, text: 'MEWS Score', color: '#555', font: { size: 10 } } }
+                }
+            }
+        });
+
+        // 2. Acuity Mix (doughnut)
+        new Chart(document.getElementById('acuityChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Level 1 — Critical', 'Level 2 — High', 'Level 3 — Moderate', 'Level 4 — Stable'],
+                datasets: [{
+                    data: [2, 4, 10, 8],
+                    backgroundColor: [C.r, C.a, C.b, C.g],
+                    borderWidth: 0, borderRadius: 3
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                cutout: '64%',
+                plugins: { legend: { ...leg, labels: { ...leg.labels, font: { size: 9 } } } }
+            }
+        });
+
+        // 3. Glycemic Control (stacked: in-range, hypo, hyper)
+        new Chart(document.getElementById('glycChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [
+                    { label: '<70 (Hypo)', data: [5, 3, 4, 2, 6, 3, 1], backgroundColor: C.r, borderRadius: 2 },
+                    { label: '70-180 (Target)', data: [68, 72, 70, 75, 65, 74, 78], backgroundColor: C.g, borderRadius: 2 },
+                    { label: '>180 (Hyper)', data: [27, 25, 26, 23, 29, 23, 21], backgroundColor: C.a, borderRadius: 2 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { ...leg, labels: { ...leg.labels, font: { size: 9 } } } },
+                scales: {
+                    y: { stacked: true, ...S.y, max: 100, ticks: { ...S.y.ticks, callback: v => v + '%' } },
+                    x: { stacked: true, ...S.x }
+                }
+            }
+        });
+
+        // 4. Fluid Balance (bar: intake vs output, line: net)
+        new Chart(document.getElementById('fluidChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Amit P.', 'Rajesh K.', 'Sneha D.', 'Karan S.', 'Priya S.'],
+                datasets: [{
+                    type: 'bar',
+                    label: 'Intake',
+                    data: [2400, 1800, 2200, 1600, 1900],
+                    backgroundColor: C.b, borderRadius: 3, order: 2
+                }, {
+                    type: 'bar',
+                    label: 'Output',
+                    data: [1800, 1600, 2000, 1500, 1850],
+                    backgroundColor: C.a, borderRadius: 3, order: 2
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { ...leg, labels: { ...leg.labels, font: { size: 9 } } } },
+                scales: {
+                    ...S,
+                    y: { ...S.y, ticks: { ...S.y.ticks, callback: v => (v / 1000).toFixed(1) + 'L' } }
+                }
+            }
+        });
+
+        // 5. Antibiotic Days (horizontal bar)
+        new Chart(document.getElementById('abxChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Ceftriaxone', 'Piperacillin', 'Vancomycin', 'Meropenem', 'Azithromycin'],
+                datasets: [{
+                    data: [12, 8, 6, 4, 3],
+                    backgroundColor: function(ctx) {
+                        const d = [12, 8, 6, 4, 3];
+                        if (d[ctx.dataIndex] > 10) return C.r;
+                        if (d[ctx.dataIndex] > 6) return C.a;
+                        return C.g;
+                    },
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: C.grid }, ticks: { color: C.tick, font: { size: 10 }, callback: v => v + 'd' } },
+                    y: { grid: { display: false }, ticks: { color: '#aaa', font: { size: 10 } } }
+                }
+            }
+        });
+
+        // 6. Vital Trends (multi-axis: HR + BP + SpO2)
+        new Chart(document.getElementById('vitalChart'), {
+            type: 'line',
+            data: {
+                labels: ['02:00', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00'],
+                datasets: [{
+                    label: 'HR (bpm)',
+                    data: [108, 112, 118, 115, 120, 116, 118],
+                    borderColor: C.r,
+                    borderWidth: 2, tension: 0.3,
+                    pointRadius: 4, pointBackgroundColor: C.r,
+                    pointBorderColor: '#0a0a0a', pointBorderWidth: 2,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Systolic BP',
+                    data: [96, 92, 88, 94, 90, 92, 92],
+                    borderColor: C.a,
+                    borderWidth: 2, tension: 0.3,
+                    pointRadius: 4, pointBackgroundColor: C.a,
+                    pointBorderColor: '#0a0a0a', pointBorderWidth: 2,
+                    yAxisID: 'y'
+                }, {
+                    label: 'SpO₂ %',
+                    data: [94, 93, 91, 92, 90, 91, 91],
+                    borderColor: C.b,
+                    borderWidth: 2, tension: 0.3,
+                    pointRadius: 4, pointBackgroundColor: C.b,
+                    pointBorderColor: '#0a0a0a', pointBorderWidth: 2,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                plugins: { legend: leg },
+                scales: {
+                    y: {
+                        position: 'left',
+                        grid: { color: C.grid },
+                        ticks: { color: C.tick, font: { size: 10 } },
+                        min: 60, max: 180,
+                        title: { display: true, text: 'HR / BP', color: '#555', font: { size: 9 } }
+                    },
+                    y1: {
+                        position: 'right',
+                        grid: { display: false },
+                        ticks: { color: C.b, font: { size: 10 }, callback: v => v + '%' },
+                        min: 85, max: 100,
+                        title: { display: true, text: 'SpO₂', color: C.b, font: { size: 9 } }
+                    },
+                    x: S.x
+                }
+            }
+        });
+
+        // 7. LOS — Discharge Readiness (horizontal bar: actual vs expected)
+        new Chart(document.getElementById('losChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Amit P. (Bed 4)', 'Rajesh K. (Bed 7)', 'Sneha D. (Bed 12)', 'Karan S. (Bed 15)', 'Priya S. (Bed 9)', 'Meera G. (Bed 18)'],
+                datasets: [{
+                    label: 'Actual Days',
+                    data: [1, 3, 2, 4, 2, 5],
+                    backgroundColor: C.b, borderRadius: 4
+                }, {
+                    label: 'Expected LOS',
+                    data: [5, 4, 4, 3, 3, 4],
+                    backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: leg },
+                scales: {
+                    x: { grid: { color: C.grid }, ticks: { color: C.tick, font: { size: 10 }, callback: v => v + 'd' } },
+                    y: { grid: { display: false }, ticks: { color: '#aaa', font: { size: 10 } } }
+                }
+            }
+        });
+
+        // 8. Escalation Events (stacked bar)
+        new Chart(document.getElementById('escChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Thu', 'Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed'],
+                datasets: [
+                    { label: 'RRT Calls', data: [1, 0, 2, 1, 0, 1, 0], backgroundColor: C.a, borderRadius: 3 },
+                    { label: 'Code Blue', data: [0, 0, 1, 0, 0, 0, 0], backgroundColor: C.r, borderRadius: 3 },
+                    { label: 'ICU Transfer', data: [0, 1, 0, 0, 1, 0, 0], backgroundColor: C.p, borderRadius: 3 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: leg },
+                scales: {
+                    y: { stacked: true, ...S.y, ticks: { ...S.y.ticks, stepSize: 1 } },
+                    x: { stacked: true, ...S.x }
+                }
+            }
+        });
+
+        // 9. Nursing Workload (grouped bar by shift)
+        new Chart(document.getElementById('workloadChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Day Shift',
+                    data: [82, 78, 85, 80, 88, 72, 68],
+                    backgroundColor: C.b, borderRadius: 4
+                }, {
+                    label: 'Night Shift',
+                    data: [65, 70, 68, 72, 66, 58, 55],
+                    backgroundColor: C.p, borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: leg },
+                scales: {
+                    ...S,
+                    y: { ...S.y, max: 100, ticks: { ...S.y.ticks, callback: v => v + '%' } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

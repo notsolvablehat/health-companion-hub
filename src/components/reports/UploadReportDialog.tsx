@@ -1,6 +1,6 @@
 // src/components/reports/UploadReportDialog.tsx
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,12 +20,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Upload, X, FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
-import { useUploadReport } from '@/hooks/queries/useReportQueries';
+import { Upload, X, FileText, Image as ImageIcon, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { useUploadReport, useAvailablePatients } from '@/hooks/queries/useReportQueries';
 import { useCases } from '@/hooks/queries/useCaseQueries';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { Report } from '@/types/report';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface UploadReportDialogProps {
   open: boolean;
@@ -51,6 +52,7 @@ export function UploadReportDialog({
   patientId,
 }: UploadReportDialogProps) {
   const [file, setFile] = useState<File | null>(null);
+  const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [caseId, setCaseId] = useState<string>('');
   const [description, setDescription] = useState('');
   const [dragActive, setDragActive] = useState(false);
@@ -58,6 +60,32 @@ export function UploadReportDialog({
   const { mutate: upload, uploadProgress, isPending } = useUploadReport();
   const { data: casesData } = useCases();
   const { user } = useAuth();
+  
+  // Fetch available patients for doctors
+  const { 
+    data: patientsData, 
+    isLoading: isPatientsLoading,
+    error: patientsError,
+    refetch: refetchPatients 
+  } = useAvailablePatients();
+
+  const isDoctor = user?.role === 'doctor';
+
+  // Initialize selected patient
+  useEffect(() => {
+    if (open) {
+      if (patientId) {
+        // If patientId prop is provided, use it
+        setSelectedPatientId(patientId);
+      } else if (!isDoctor && user?.id) {
+        // For patients, auto-select their own ID
+        setSelectedPatientId(user.id);
+      } else {
+        // For doctors, reset selection
+        setSelectedPatientId('');
+      }
+    }
+  }, [open, patientId, isDoctor, user?.id]);
 
   const handleFileChange = (selectedFile: File | null) => {
     if (!selectedFile) {
@@ -106,9 +134,18 @@ export function UploadReportDialog({
       return;
     }
 
-    // Determine patient_id: use prop if provided (doctor uploading for patient),
-    // otherwise use current user's ID if they're a patient
-    const effectivePatientId = patientId || (user?.role === 'patient' ? user.id : undefined);
+    if (isDoctor && !selectedPatientId) {
+      toast.error('Please select a patient');
+      return;
+    }
+
+    // Determine patient_id: use selected patient or current user's ID
+    const effectivePatientId = selectedPatientId || user?.id;
+
+    if (!effectivePatientId) {
+      toast.error('Unable to determine patient ID');
+      return;
+    }
 
     upload(
       {
@@ -124,7 +161,13 @@ export function UploadReportDialog({
           handleClose();
         },
         onError: (error: any) => {
-          toast.error(error.message || 'Failed to upload report');
+          const errorMessage = error.message || 'Failed to upload report';
+          toast.error(errorMessage);
+          
+          // If error is about unassigned patient, suggest refreshing patient list
+          if (errorMessage.includes('not assigned')) {
+            toast.info('Patient list may have changed. Try refreshing.');
+          }
         },
       }
     );
@@ -133,6 +176,7 @@ export function UploadReportDialog({
   const handleClose = () => {
     if (!isPending) {
       setFile(null);
+      setSelectedPatientId('');
       setCaseId('');
       setDescription('');
       onClose();
@@ -159,6 +203,66 @@ export function UploadReportDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Patient Selection (Doctors Only) */}
+          {isDoctor && !patientId && (
+            <div>
+              <Label htmlFor="patient-select">
+                Select Patient <span className="text-destructive">*</span>
+              </Label>
+              
+              {isPatientsLoading ? (
+                <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Loading patients...
+                </div>
+              ) : patientsError ? (
+                <Alert variant="destructive" className="mt-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Failed to load patients. Please try again.
+                  </AlertDescription>
+                </Alert>
+              ) : patientsData?.patients && patientsData.patients.length > 0 ? (
+                <Select 
+                  value={selectedPatientId} 
+                  onValueChange={setSelectedPatientId} 
+                  disabled={isPending}
+                >
+                  <SelectTrigger id="patient-select" className="mt-2">
+                    <SelectValue placeholder="Choose a patient" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {patientsData.patients.map((patient) => (
+                      <SelectItem key={patient.user_id} value={patient.user_id}>
+                        {patient.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Alert className="mt-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    No patients assigned to you yet. Contact administration to get patient assignments.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {patientsData && patientsData.patients.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => refetchPatients()}
+                  disabled={isPatientsLoading || isPending}
+                  className="mt-2"
+                >
+                  <RefreshCw className={`w-3 h-3 mr-1 ${isPatientsLoading ? 'animate-spin' : ''}`} />
+                  Refresh Patient List
+                </Button>
+              )}
+            </div>
+          )}
+
           {/* File Upload Area */}
           <div>
             <Label>File</Label>
@@ -275,7 +379,7 @@ export function UploadReportDialog({
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={!file || isPending}
+              disabled={!file || isPending || (isDoctor && !selectedPatientId)}
               className="flex-1"
             >
               {isPending ? (

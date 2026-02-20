@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard — Ops Board</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        /* ─── Top Rail ─── */
+        .rail {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            border-bottom: 1px solid #1a1a1a;
+            position: sticky;
+            top: 0;
+            background: #0a0a0a;
+            z-index: 100;
+        }
+
+        .rail-left { display: flex; align-items: baseline; gap: 16px; }
+        .rail-title { font-size: 14px; font-weight: 600; color: #fff; }
+        .rail-sub { font-size: 11px; color: #555; }
+
+        .rail-right { display: flex; align-items: center; gap: 10px; }
+
+        .btn-sm {
+            background: #1a1a1a;
+            border: 1px solid #222;
+            padding: 6px 14px;
+            border-radius: 6px;
+            color: #888;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-sm:hover { background: #222; color: #ccc; }
+
+        .live-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #00ff88;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* ─── Layout ─── */
+        .layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            min-height: calc(100vh - 45px);
+        }
+
+        /* ─── Gauge Column ─── */
+        .gauge-col {
+            border-right: 1px solid #1a1a1a;
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+        }
+
+        .gauge-card {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+
+        .gauge-card:hover { border-color: #2a2a2a; }
+
+        .gauge-label {
+            font-size: 10px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 12px;
+        }
+
+        .gauge-ring {
+            position: relative;
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 10px;
+        }
+
+        .gauge-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .gauge-ring circle {
+            fill: none;
+            stroke-width: 6;
+        }
+
+        .gauge-ring .track { stroke: #1a1a1a; }
+
+        .gauge-ring .fill {
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.8s ease;
+        }
+
+        .gauge-num {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .gauge-num small {
+            font-size: 11px;
+            color: #888;
+            font-weight: 400;
+        }
+
+        .gauge-sub {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .gauge-sub .up { color: #00ff88; }
+        .gauge-sub .down { color: #ff4444; }
+        .gauge-sub .warn { color: #ffaa00; }
+
+        /* ─── Chart Area ─── */
+        .chart-area {
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .row { display: grid; gap: 16px; margin-bottom: 16px; }
+        .row-2 { grid-template-columns: 1fr 1fr; }
+        .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .row-wide { grid-template-columns: 3fr 2fr; }
+        .row-1 { grid-template-columns: 1fr; }
+
+        .panel {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .panel-t {
+            font-size: 11px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 500;
+        }
+
+        .panel-sub { font-size: 10px; color: #444; }
+
+        .c-area { position: relative; height: 260px; }
+        .c-area.tall { height: 300px; }
+        .c-area.short { height: 200px; }
+
+        /* ─── Mini KPI Strip ─── */
+        .kpi-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .kpi-mini {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .kpi-mini-label {
+            font-size: 10px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .kpi-mini-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+        }
+
+        .kpi-mini-val {
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .kpi-mini-delta { font-size: 11px; font-weight: 500; }
+        .kpi-mini-delta.good { color: #00ff88; }
+        .kpi-mini-delta.bad { color: #ff4444; }
+        .kpi-mini-delta.meh { color: #ffaa00; }
+
+        /* ─── Light Mode ─── */
+        body.light-mode { background: #f5f5f7; }
+        body.light-mode .rail { background: #f5f5f7; border-color: #e0e0e0; }
+        body.light-mode .rail-title { color: #1a1a1a; }
+        body.light-mode .gauge-col { border-color: #e0e0e0; }
+        body.light-mode .gauge-card,
+        body.light-mode .panel,
+        body.light-mode .kpi-mini { background: #fff; border-color: #e8e8e8; }
+        body.light-mode .gauge-card:hover,
+        body.light-mode .panel:hover { border-color: #ddd; }
+        body.light-mode .gauge-num { color: #1a1a1a; }
+        body.light-mode .gauge-ring .track { stroke: #eee; }
+        body.light-mode .kpi-mini-val { color: #1a1a1a; }
+        body.light-mode .panel-t,
+        body.light-mode .gauge-label,
+        body.light-mode .kpi-mini-label { color: #999; }
+        body.light-mode .btn-sm { background: #fff; border-color: #ddd; color: #666; }
+        body.light-mode .live-dot { background: #0a8a4a; }
+
+        @media (max-width: 1024px) {
+            .layout { grid-template-columns: 1fr; }
+            .gauge-col {
+                flex-direction: row;
+                flex-wrap: wrap;
+                border-right: none;
+                border-bottom: 1px solid #1a1a1a;
+                padding: 12px;
+            }
+            .gauge-card { min-width: 150px; flex: 1; }
+            .row-3 { grid-template-columns: 1fr 1fr; }
+            .row-wide { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .row-2, .row-3 { grid-template-columns: 1fr; }
+            .kpi-strip { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .kpi-strip { grid-template-columns: 1fr; }
+            .gauge-col { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="rail">
+        <div class="rail-left">
+            <div class="rail-title">Ops Board</div>
+            <div class="rail-sub">Dr. Sharma · Internal Medicine · 19 Feb 2026</div>
+        </div>
+        <div class="rail-right">
+            <div class="live-dot"></div>
+            <div style="font-size:11px;color:#555;">Real-time</div>
+            <button class="btn-sm" onclick="document.body.classList.toggle('light-mode')">Theme</button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <!-- Left Gauge Column -->
+        <div class="gauge-col">
+            <div class="gauge-card">
+                <div class="gauge-label">Bed Occupancy</div>
+                <div class="gauge-ring">
+                    <svg viewBox="0 0 90 90">
+                        <circle class="track" cx="45" cy="45" r="38"/>
+                        <circle class="fill" cx="45" cy="45" r="38"
+                            stroke="#00ff88"
+                            stroke-dasharray="238.76"
+                            stroke-dashoffset="40.59"/>
+                    </svg>
+                    <div class="gauge-num">83%</div>
+                </div>
+                <div class="gauge-sub">24/29 beds · <span class="warn">5 available</span></div>
+            </div>
+
+            <div class="gauge-card">
+                <div class="gauge-label">Avg Length of Stay</div>
+                <div class="gauge-ring">
+                    <svg viewBox="0 0 90 90">
+                        <circle class="track" cx="45" cy="45" r="38"/>
+                        <circle class="fill" cx="45" cy="45" r="38"
+                            stroke="#00aaff"
+                            stroke-dasharray="238.76"
+                            stroke-dashoffset="95.50"/>
+                    </svg>
+                    <div class="gauge-num">3.8<small>d</small></div>
+                </div>
+                <div class="gauge-sub">Target 4.2d · <span class="up">under target</span></div>
+            </div>
+
+            <div class="gauge-card">
+                <div class="gauge-label">Lab TAT</div>
+                <div class="gauge-ring">
+                    <svg viewBox="0 0 90 90">
+                        <circle class="track" cx="45" cy="45" r="38"/>
+                        <circle class="fill" cx="45" cy="45" r="38"
+                            stroke="#ffaa00"
+                            stroke-dasharray="238.76"
+                            stroke-dashoffset="59.69"/>
+                    </svg>
+                    <div class="gauge-num">52<small>m</small></div>
+                </div>
+                <div class="gauge-sub">Target 45m · <span class="warn">7m over</span></div>
+            </div>
+
+            <div class="gauge-card">
+                <div class="gauge-label">Discharge Velocity</div>
+                <div class="gauge-ring">
+                    <svg viewBox="0 0 90 90">
+                        <circle class="track" cx="45" cy="45" r="38"/>
+                        <circle class="fill" cx="45" cy="45" r="38"
+                            stroke="#00ff88"
+                            stroke-dasharray="238.76"
+                            stroke-dashoffset="52.53"/>
+                    </svg>
+                    <div class="gauge-num">78%</div>
+                </div>
+                <div class="gauge-sub">Within 2h of order · <span class="up">+6%</span></div>
+            </div>
+
+            <div class="gauge-card">
+                <div class="gauge-label">DVT Prophylaxis</div>
+                <div class="gauge-ring">
+                    <svg viewBox="0 0 90 90">
+                        <circle class="track" cx="45" cy="45" r="38"/>
+                        <circle class="fill" cx="45" cy="45" r="38"
+                            stroke="#00ff88"
+                            stroke-dasharray="238.76"
+                            stroke-dashoffset="21.49"/>
+                    </svg>
+                    <div class="gauge-num">91%</div>
+                </div>
+                <div class="gauge-sub">Compliance · <span class="up">above 90% target</span></div>
+            </div>
+
+            <div class="gauge-card">
+                <div class="gauge-label">Code Response</div>
+                <div class="gauge-ring">
+                    <svg viewBox="0 0 90 90">
+                        <circle class="track" cx="45" cy="45" r="38"/>
+                        <circle class="fill" cx="45" cy="45" r="38"
+                            stroke="#ff4444"
+                            stroke-dasharray="238.76"
+                            stroke-dashoffset="107.44"/>
+                    </svg>
+                    <div class="gauge-num">3.2<small>m</small></div>
+                </div>
+                <div class="gauge-sub">Avg response · <span class="down">target 2.5m</span></div>
+            </div>
+        </div>
+
+        <!-- Right Chart Area -->
+        <div class="chart-area">
+            <div class="kpi-strip">
+                <div class="kpi-mini">
+                    <div class="kpi-mini-label">30-Day Readmission</div>
+                    <div class="kpi-mini-row">
+                        <div class="kpi-mini-val">6.2%</div>
+                        <div class="kpi-mini-delta good">-1.8%</div>
+                    </div>
+                </div>
+                <div class="kpi-mini">
+                    <div class="kpi-mini-label">Case Mix Index</div>
+                    <div class="kpi-mini-row">
+                        <div class="kpi-mini-val">1.42</div>
+                        <div class="kpi-mini-delta meh">+0.05</div>
+                    </div>
+                </div>
+                <div class="kpi-mini">
+                    <div class="kpi-mini-label">Mortality Index (O/E)</div>
+                    <div class="kpi-mini-row">
+                        <div class="kpi-mini-val">0.74</div>
+                        <div class="kpi-mini-delta good">below 1.0</div>
+                    </div>
+                </div>
+                <div class="kpi-mini">
+                    <div class="kpi-mini-label">Antibiotic DOT/1000</div>
+                    <div class="kpi-mini-row">
+                        <div class="kpi-mini-val">482</div>
+                        <div class="kpi-mini-delta meh">target 450</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 1 -->
+            <div class="row row-wide">
+                <div class="panel">
+                    <div class="panel-head">
+                        <div class="panel-t">LOS vs Expected LOS</div>
+                        <div class="panel-sub">By DRG category · days</div>
+                    </div>
+                    <div class="c-area">
+                        <canvas id="losChart"></canvas>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-head">
+                        <div class="panel-t">Bed Turnover</div>
+                        <div class="panel-sub">Discharges + admits per day</div>
+                    </div>
+                    <div class="c-area">
+                        <canvas id="turnoverChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2 -->
+            <div class="row row-3">
+                <div class="panel">
+                    <div class="panel-head">
+                        <div class="panel-t">Readmission Trend</div>
+                        <div class="panel-sub">30-day, rolling 6 months</div>
+                    </div>
+                    <div class="c-area short">
+                        <canvas id="readmitChart"></canvas>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-head">
+                        <div class="panel-t">Antibiotic Stewardship</div>
+                        <div class="panel-sub">DOT per 1000 patient-days</div>
+                    </div>
+                    <div class="c-area short">
+                        <canvas id="abxChart"></canvas>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-head">
+                        <div class="panel-t">Patient Acuity</div>
+                        <div class="panel-sub">Current ward distribution</div>
+                    </div>
+                    <div class="c-area short">
+                        <canvas id="acuityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3 -->
+            <div class="row row-2">
+                <div class="panel">
+                    <div class="panel-head">
+                        <div class="panel-t">Lab Turnaround Time</div>
+                        <div class="panel-sub">Minutes · by test type</div>
+                    </div>
+                    <div class="c-area">
+                        <canvas id="labChart"></canvas>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-head">
+                        <div class="panel-t">Discharge Timing</div>
+                        <div class="panel-sub">% within target by hour</div>
+                    </div>
+                    <div class="c-area">
+                        <canvas id="dischargeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const C = {
+            g: '#00ff88', b: '#00aaff', r: '#ff4444', a: '#ffaa00',
+            p: '#8b5cf6', t: '#14b8a6',
+            grid: 'rgba(255,255,255,0.04)', tick: '#555'
+        };
+
+        const S = {
+            y: { beginAtZero: true, grid: { color: C.grid }, ticks: { color: C.tick, font: { size: 10 } } },
+            x: { grid: { display: false }, ticks: { color: C.tick, font: { size: 10 } } }
+        };
+
+        const leg = { position: 'bottom', labels: { color: '#888', boxWidth: 10, padding: 12, font: { size: 10 } } };
+
+        // 1. LOS vs Expected (grouped bar)
+        new Chart(document.getElementById('losChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Cardiac', 'Metabolic', 'Respiratory', 'Surgical', 'Renal', 'Neuro'],
+                datasets: [{
+                    label: 'Actual LOS',
+                    data: [4.2, 3.1, 5.8, 3.6, 4.8, 6.1],
+                    backgroundColor: C.b,
+                    borderRadius: 4
+                }, {
+                    label: 'Expected LOS',
+                    data: [4.5, 3.8, 5.2, 4.0, 5.1, 5.5],
+                    backgroundColor: 'rgba(255,255,255,0.08)',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: leg },
+                scales: {
+                    ...S,
+                    y: { ...S.y, ticks: { ...S.y.ticks, callback: v => v + 'd' } }
+                }
+            }
+        });
+
+        // 2. Bed Turnover (stacked area)
+        new Chart(document.getElementById('turnoverChart'), {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Admits',
+                    data: [6, 8, 5, 7, 9, 4, 3],
+                    borderColor: C.b,
+                    backgroundColor: 'rgba(0,170,255,0.08)',
+                    fill: true, tension: 0.3, borderWidth: 2,
+                    pointRadius: 3, pointBackgroundColor: C.b
+                }, {
+                    label: 'Discharges',
+                    data: [5, 7, 6, 8, 8, 5, 4],
+                    borderColor: C.g,
+                    backgroundColor: 'rgba(0,255,136,0.08)',
+                    fill: true, tension: 0.3, borderWidth: 2,
+                    pointRadius: 3, pointBackgroundColor: C.g
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: leg },
+                scales: S
+            }
+        });
+
+        // 3. Readmission Trend (line with target)
+        new Chart(document.getElementById('readmitChart'), {
+            type: 'line',
+            data: {
+                labels: ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+                datasets: [{
+                    label: 'Rate',
+                    data: [9.1, 8.4, 7.8, 7.2, 6.8, 6.2],
+                    borderColor: C.g,
+                    backgroundColor: 'rgba(0,255,136,0.06)',
+                    fill: true, tension: 0.3, borderWidth: 2,
+                    pointRadius: 4, pointBackgroundColor: C.g,
+                    pointBorderColor: '#0a0a0a', pointBorderWidth: 2
+                }, {
+                    label: 'National Avg',
+                    data: [8.0, 8.0, 8.0, 8.0, 8.0, 8.0],
+                    borderColor: '#444', borderWidth: 1,
+                    borderDash: [4, 3], pointRadius: 0, fill: false
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: leg },
+                scales: { ...S, y: { ...S.y, ticks: { ...S.y.ticks, callback: v => v + '%' }, min: 4, max: 12 } }
+            }
+        });
+
+        // 4. Antibiotic Stewardship (bar + line)
+        new Chart(document.getElementById('abxChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+                datasets: [{
+                    type: 'bar',
+                    label: 'DOT/1000',
+                    data: [520, 510, 498, 490, 488, 482],
+                    backgroundColor: C.a,
+                    borderRadius: 4, order: 2
+                }, {
+                    type: 'line',
+                    label: 'Target',
+                    data: [450, 450, 450, 450, 450, 450],
+                    borderColor: '#444', borderWidth: 1,
+                    borderDash: [4, 3], pointRadius: 0, order: 1
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: leg },
+                scales: { ...S, y: { ...S.y, min: 400 } }
+            }
+        });
+
+        // 5. Patient Acuity (doughnut)
+        new Chart(document.getElementById('acuityChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Level 1 (ICU)', 'Level 2 (Step-down)', 'Level 3 (Acute)', 'Level 4 (General)'],
+                datasets: [{
+                    data: [3, 5, 10, 11],
+                    backgroundColor: [C.r, C.a, C.b, C.g],
+                    borderWidth: 0, borderRadius: 3
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                cutout: '62%',
+                plugins: { legend: { ...leg, labels: { ...leg.labels, font: { size: 9 } } } }
+            }
+        });
+
+        // 6. Lab TAT (horizontal bar, by test)
+        new Chart(document.getElementById('labChart'), {
+            type: 'bar',
+            data: {
+                labels: ['CBC', 'BMP', 'Troponin', 'TSH', 'HbA1c', 'Lipid Panel', 'Blood Culture', 'ABG'],
+                datasets: [{
+                    label: 'Actual (min)',
+                    data: [32, 38, 28, 55, 65, 48, 120, 18],
+                    backgroundColor: function(ctx) {
+                        const targets = [30, 35, 25, 50, 60, 45, 90, 15];
+                        return ctx.parsed?.x > targets[ctx.dataIndex] ? C.a : C.g;
+                    },
+                    borderRadius: 4
+                }, {
+                    label: 'Target (min)',
+                    data: [30, 35, 25, 50, 60, 45, 90, 15],
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: leg },
+                scales: {
+                    x: { grid: { color: C.grid }, ticks: { color: C.tick, font: { size: 10 }, callback: v => v + 'm' } },
+                    y: { grid: { display: false }, ticks: { color: '#aaa', font: { size: 10 } } }
+                }
+            }
+        });
+
+        // 7. Discharge Timing (area)
+        new Chart(document.getElementById('dischargeChart'), {
+            type: 'line',
+            data: {
+                labels: ['8am', '9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm', '4pm', '5pm'],
+                datasets: [{
+                    label: 'Cumulative %',
+                    data: [5, 12, 28, 45, 58, 68, 78, 86, 92, 97],
+                    borderColor: C.g,
+                    backgroundColor: 'rgba(0,255,136,0.06)',
+                    fill: true, tension: 0.3, borderWidth: 2,
+                    pointRadius: 4, pointBackgroundColor: C.g,
+                    pointBorderColor: '#0a0a0a', pointBorderWidth: 2
+                }, {
+                    label: 'Target 80% by 2pm',
+                    data: [null, null, null, null, null, null, 80, null, null, null],
+                    borderColor: C.r,
+                    pointRadius: 8, pointBackgroundColor: 'transparent',
+                    pointBorderColor: C.r, pointBorderWidth: 2,
+                    showLine: false
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: leg },
+                scales: { ...S, y: { ...S.y, max: 100, ticks: { ...S.y.ticks, callback: v => v + '%' } } }
+            }
+        });
+    </script>
+</body>
+</html>

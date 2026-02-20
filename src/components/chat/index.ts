@@ -5,3 +5,4 @@ export { ChatInput } from './ChatInput';
 export { MessageBubble } from './MessageBubble';
 export { NewChatDialog } from './NewChatDialog';
 export { AttachReportsDialog } from './AttachReportsDialog';
+export { VoiceRecorder } from './VoiceRecorder';

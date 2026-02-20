@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MessageCircle } from 'lucide-react';
+import { Bot, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { getInitials } from '@/lib/utils';
 import {
   ChatSidebar,
   ChatHeader,
@@ -19,18 +20,27 @@ import {
   useSendMessage,
   useDeleteChat,
   useUpdateChatReports,
+  useSendVoiceMessage,
 } from '@/hooks/queries/useChatQueries';
 import { useReports } from '@/hooks/queries/useReportQueries';
 import { cn } from '@/lib/utils';
+import type { VoiceLanguage } from '@/types/chat';
 
 export default function PatientChat() {
   const { chatId } = useParams<{ chatId?: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { profile } = useAuth();
 
   const [showNewChatDialog, setShowNewChatDialog] = useState(false);
   const [showAttachDialog, setShowAttachDialog] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [readAloud, setReadAloud] = useState(false);
+
+  // User initials for avatar
+  const userInitials = profile && 'first_name' in profile
+    ? getInitials(profile.first_name, profile.last_name)
+    : '?';
 
   // Queries
   const { data: chatsData, isLoading: chatsLoading } = useChats();
@@ -40,6 +50,7 @@ export default function PatientChat() {
   // Mutations
   const startChat = useStartChat();
   const sendMessage = useSendMessage(chatId || '');
+  const sendVoiceMessage = useSendVoiceMessage(chatId || '');
   const deleteChat = useDeleteChat();
   const updateReports = useUpdateChatReports(chatId || '');
 
@@ -52,7 +63,10 @@ export default function PatientChat() {
     if (!chatId) return;
 
     try {
-      await sendMessage.mutateAsync({ message });
+      const response = await sendMessage.mutateAsync({ message });
+      if (readAloud && response.response) {
+        speakText(response.response);
+      }
     } catch (error) {
       toast({
         title: 'Failed to send message',
@@ -61,6 +75,36 @@ export default function PatientChat() {
       });
     }
   };
+
+  const handleSendVoiceMessage = useCallback(async (audioBlob: Blob, language: VoiceLanguage) => {
+    if (!chatId) return;
+
+    try {
+      const response = await sendVoiceMessage.mutateAsync({
+        audioBlob,
+        language,
+      });
+      if (readAloud && response.response) {
+        speakText(response.response);
+      }
+    } catch (error) {
+      toast({
+        title: 'Failed to send voice message',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [chatId, sendVoiceMessage, readAloud, toast]);
+
+  const speakText = useCallback((text: string) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      utterance.pitch = 1;
+      window.speechSynthesis.speak(utterance);
+    }
+  }, []);
 
   const handleStartChat = async (reportIds?: string[]): Promise<string> => {
     const result = await startChat.mutateAsync({
@@ -77,7 +121,6 @@ export default function PatientChat() {
         title: 'Conversation deleted',
         description: 'The conversation has been removed.',
       });
-      // If we deleted the current chat, navigate to chat list
       if (targetChatId === chatId) {
         navigate('/patient/chat');
       }
@@ -104,97 +147,91 @@ export default function PatientChat() {
     }
   }, [chatId]);
 
-  // Empty state - no chat selected
-  if (!chatId) {
-    return (
-      <div className="flex h-[calc(100vh-8rem)]">
-        <ChatSidebar
-          chats={sortedChats}
-          selectedChatId={null}
-          onSelectChat={(id) => navigate(`/patient/chat/${id}`)}
-          onNewChat={() => setShowNewChatDialog(true)}
-          onDeleteChat={handleDeleteChat}
-          isLoading={chatsLoading}
-          isDeleting={deleteChat.isPending}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
-
-        <Card className={cn(
-          'flex-1 flex flex-col items-center justify-center',
-          sidebarCollapsed ? '' : 'hidden md:flex'
-        )}>
-          <div className="text-center p-8">
-            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-              <MessageCircle className="w-10 h-10 text-primary" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">AI Health Assistant</h2>
-            <p className="text-muted-foreground mb-6 max-w-sm">
-              Start a conversation to ask questions about your medical history,
-              lab results, medications, or health concerns.
-            </p>
-            <Button onClick={() => setShowNewChatDialog(true)} size="lg">
-              <MessageCircle className="w-5 h-5 mr-2" />
-              Start New Chat
-            </Button>
-          </div>
-        </Card>
-
-        <NewChatDialog
-          open={showNewChatDialog}
-          onClose={() => setShowNewChatDialog(false)}
-          onStartChat={handleStartChat}
-          reports={reportsData?.reports || []}
-          isLoadingReports={reportsLoading}
-          isStarting={startChat.isPending}
-        />
-      </div>
-    );
-  }
-
-  // Chat view
+  // Full-screen container — no app sidebar/header
   return (
-    <div className="flex h-[calc(100vh-8rem)]">
-      <div className={cn('md:block', sidebarCollapsed ? 'hidden' : 'block w-full md:w-auto')}>
-        <ChatSidebar
-          chats={sortedChats}
-          selectedChatId={chatId}
-          onSelectChat={(id) => navigate(`/patient/chat/${id}`)}
-          onNewChat={() => setShowNewChatDialog(true)}
-          onDeleteChat={handleDeleteChat}
-          isLoading={chatsLoading}
-          isDeleting={deleteChat.isPending}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
+    <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
+      {/* Top Header Bar — always visible */}
+      <ChatHeader
+        chat={chatId ? chatHistory : null}
+        onAttachReports={chatId ? () => setShowAttachDialog(true) : undefined}
+        onDeleteChat={chatId ? () => handleDeleteChat(chatId) : undefined}
+        onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+        showSidebarToggle={!!chatId}
+        readAloud={readAloud}
+        onToggleReadAloud={setReadAloud}
+        dashboardPath="/patient/dashboard"
+        userInitials={userInitials}
+      />
+
+      {/* Main content below header */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <div className={cn(
+          'md:flex shrink-0',
+          chatId && sidebarCollapsed ? 'hidden' : 'flex',
+          !chatId ? 'flex' : '',
+          // On mobile when no chat, show full width
+          !chatId && 'w-full md:w-auto',
+        )}>
+          <ChatSidebar
+            chats={sortedChats}
+            selectedChatId={chatId || null}
+            onSelectChat={(id) => navigate(`/patient/chat/${id}`)}
+            onNewChat={() => setShowNewChatDialog(true)}
+            onDeleteChat={handleDeleteChat}
+            isLoading={chatsLoading}
+            isDeleting={deleteChat.isPending}
+            collapsed={sidebarCollapsed && !!chatId}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          />
+        </div>
+
+        {/* Chat area */}
+        {chatId ? (
+          <div className={cn(
+            'flex-1 flex flex-col overflow-hidden bg-background',
+            !sidebarCollapsed && 'hidden md:flex'
+          )}>
+            <ChatMessages
+              messages={chatHistory?.messages || []}
+              isLoading={historyLoading}
+              isSending={sendMessage.isPending || sendVoiceMessage.isPending}
+            />
+
+            <ChatInput
+              onSend={handleSendMessage}
+              onSendVoice={handleSendVoiceMessage}
+              disabled={!chatId}
+              isLoading={sendMessage.isPending}
+              isVoiceProcessing={sendVoiceMessage.isPending}
+              placeholder="Type a message or speak..."
+            />
+          </div>
+        ) : (
+          /* Empty state — no chat selected */
+          <div className={cn(
+            'flex-1 flex flex-col items-center justify-center',
+            'hidden md:flex'
+          )}>
+            <div className="text-center p-8">
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                <Bot className="w-10 h-10 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">AI Health Assistant</h2>
+              <p className="text-muted-foreground mb-6 max-w-sm">
+                Start a conversation to ask questions about your medical history,
+                lab results, medications, or health concerns.
+              </p>
+              <Button onClick={() => setShowNewChatDialog(true)} size="lg">
+                <MessageCircle className="w-5 h-5 mr-2" />
+                Start New Chat
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
-      <Card className={cn(
-        'flex-1 flex flex-col overflow-hidden',
-        !sidebarCollapsed && 'hidden md:flex'
-      )}>
-        <ChatHeader
-          chat={chatHistory}
-          onAttachReports={() => setShowAttachDialog(true)}
-          onDeleteChat={() => handleDeleteChat(chatId)}
-          onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
-          showSidebarToggle={true}
-        />
-
-        <ChatMessages
-          messages={chatHistory?.messages || []}
-          isLoading={historyLoading}
-          isSending={sendMessage.isPending}
-        />
-
-        <ChatInput
-          onSend={handleSendMessage}
-          disabled={!chatId}
-          isLoading={sendMessage.isPending}
-          placeholder="Ask about your health, lab results, medications..."
-        />
-      </Card>
-
+      {/* Dialogs */}
       <NewChatDialog
         open={showNewChatDialog}
         onClose={() => setShowNewChatDialog(false)}
@@ -204,15 +241,17 @@ export default function PatientChat() {
         isStarting={startChat.isPending}
       />
 
-      <AttachReportsDialog
-        open={showAttachDialog}
-        onClose={() => setShowAttachDialog(false)}
-        onUpdate={handleUpdateReports}
-        reports={reportsData?.reports || []}
-        currentlyAttached={chatHistory?.attached_report_ids || []}
-        isLoadingReports={reportsLoading}
-        isUpdating={updateReports.isPending}
-      />
+      {chatId && (
+        <AttachReportsDialog
+          open={showAttachDialog}
+          onClose={() => setShowAttachDialog(false)}
+          onUpdate={handleUpdateReports}
+          reports={reportsData?.reports || []}
+          currentlyAttached={chatHistory?.attached_report_ids || []}
+          isLoadingReports={reportsLoading}
+          isUpdating={updateReports.isPending}
+        />
+      )}
     </div>
   );
 }

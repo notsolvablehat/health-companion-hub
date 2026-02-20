@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Users, Loader2 } from 'lucide-react';
+import { Bot, MessageCircle, Users, Loader2 } from 'lucide-react';
+import type { VoiceLanguage } from '@/types/chat';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { getInitials } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +36,7 @@ import {
   useChatHistory,
   useStartChat,
   useSendMessage,
+  useSendVoiceMessage,
   useDeleteChat,
   useUpdateChatReports,
 } from '@/hooks/queries/useChatQueries';
@@ -45,14 +48,21 @@ export default function DoctorChat() {
   const { chatId } = useParams<{ chatId?: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { profile } = useAuth();
 
   const [showNewChatDialog, setShowNewChatDialog] = useState(false);
   const [showAttachDialog, setShowAttachDialog] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [readAloud, setReadAloud] = useState(false);
   
   // New chat dialog state
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [selectedReportIds, setSelectedReportIds] = useState<string[]>([]);
+
+  // User initials for avatar
+  const userInitials = profile && 'first_name' in profile
+    ? getInitials(profile.first_name, profile.last_name)
+    : '?';
 
   // Queries
   const { data: chatsData, isLoading: chatsLoading } = useChats();
@@ -69,6 +79,7 @@ export default function DoctorChat() {
   // Mutations
   const startChat = useStartChat();
   const sendMessage = useSendMessage(chatId || '');
+  const sendVoiceMessage = useSendVoiceMessage(chatId || '');
   const deleteChat = useDeleteChat();
   const updateReports = useUpdateChatReports(chatId || '');
 
@@ -88,7 +99,10 @@ export default function DoctorChat() {
     if (!chatId) return;
 
     try {
-      await sendMessage.mutateAsync({ message });
+      const response = await sendMessage.mutateAsync({ message });
+      if (readAloud && response.response) {
+        speakText(response.response);
+      }
     } catch (error) {
       toast({
         title: 'Failed to send message',
@@ -97,6 +111,36 @@ export default function DoctorChat() {
       });
     }
   };
+
+  const handleSendVoiceMessage = useCallback(async (audioBlob: Blob, language: VoiceLanguage) => {
+    if (!chatId) return;
+
+    try {
+      const response = await sendVoiceMessage.mutateAsync({
+        audioBlob,
+        language,
+      });
+      if (readAloud && response.response) {
+        speakText(response.response);
+      }
+    } catch (error) {
+      toast({
+        title: 'Failed to send voice message',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [chatId, sendVoiceMessage, readAloud, toast]);
+
+  const speakText = useCallback((text: string) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      utterance.pitch = 1;
+      window.speechSynthesis.speak(utterance);
+    }
+  }, []);
 
   const handleStartChat = async () => {
     if (!selectedPatientId) {
@@ -178,208 +222,93 @@ export default function DoctorChat() {
     setSelectedReportIds([]);
   };
 
-  // Empty state - no chat selected
-  if (!chatId) {
-    return (
-      <div className="flex h-[calc(100vh-8rem)]">
-        <ChatSidebar
-          chats={sortedChats}
-          selectedChatId={null}
-          onSelectChat={(id) => navigate(`/doctor/chat/${id}`)}
-          onNewChat={() => setShowNewChatDialog(true)}
-          onDeleteChat={handleDeleteChat}
-          isLoading={chatsLoading}
-          isDeleting={deleteChat.isPending}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
-
-        <Card className={cn(
-          'flex-1 flex flex-col items-center justify-center',
-          sidebarCollapsed ? '' : 'hidden md:flex'
-        )}>
-          <div className="text-center p-8">
-            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-              <MessageCircle className="w-10 h-10 text-primary" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">AI Clinical Assistant</h2>
-            <p className="text-muted-foreground mb-6 max-w-sm">
-              Start a conversation about a patient's medical history, get AI-powered
-              insights, and quickly understand patient trends.
-            </p>
-            <Button onClick={() => setShowNewChatDialog(true)} size="lg">
-              <MessageCircle className="w-5 h-5 mr-2" />
-              Start New Chat
-            </Button>
-          </div>
-        </Card>
-
-        {/* Doctor-specific New Chat Dialog */}
-        <Dialog open={showNewChatDialog} onOpenChange={handleCloseNewDialog}>
-          <DialogContent className="">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <MessageCircle className="h-5 w-5" />
-                New Patient Consultation
-              </DialogTitle>
-              <DialogDescription>
-                Select a patient to start an AI-assisted consultation about their medical history.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              {/* Patient Selection */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Select Patient *</label>
-                <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a patient..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {patientsLoading ? (
-                      <div className="flex items-center justify-center p-4">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      </div>
-                    ) : patientsData?.patients?.length === 0 ? (
-                      <div className="p-4 text-center text-sm text-muted-foreground">
-                        <Users className="h-6 w-6 mx-auto mb-2" />
-                        No assigned patients
-                      </div>
-                    ) : (
-                      patientsData?.patients?.map((patient) => (
-                        <SelectItem key={patient.patient_id} value={patient.patient_id}>
-                          {patient.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Report Selection (only show after patient is selected) */}
-              {selectedPatientId && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Attach Reports (Optional)</label>
-                  <ScrollArea className="h-40 border rounded-md p-2">
-                    {patientReportsLoading ? (
-                      <div className="flex items-center justify-center h-full">
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                      </div>
-                    ) : !patientReportsData?.reports?.length ? (
-                      <div className="flex flex-col items-center justify-center h-full text-center p-4">
-                        <FileText className="h-6 w-6 text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground">No reports for this patient</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {patientReportsData.reports.map((report) => (
-                          <label
-                            key={report.id}
-                            className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer"
-                          >
-                            <Checkbox
-                              checked={selectedReportIds.includes(report.id)}
-                              onCheckedChange={() => handleToggleReport(report.id)}
-                              className="mt-0.5"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                <span className="text-sm font-medium truncate">
-                                  {report.file_name || 'Untitled Report'}
-                                </span>
-                              </div>
-                              {report.description && (
-                                <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                                  {report.description}
-                                </p>
-                              )}
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                    )}
-                  </ScrollArea>
-                  {selectedReportIds.length > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      {selectedReportIds.length} report{selectedReportIds.length !== 1 && 's'} selected
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={handleCloseNewDialog} disabled={startChat.isPending}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleStartChat}
-                disabled={!selectedPatientId || startChat.isPending}
-              >
-                {startChat.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Starting...
-                  </>
-                ) : (
-                  'Start Chat'
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-    );
-  }
-
-  // Chat view
+  // Full-screen container — no app sidebar/header
   return (
-    <div className="flex h-[calc(100vh-8rem)]">
-      <div className={cn('md:block', sidebarCollapsed ? 'hidden' : 'block w-full md:w-auto')}>
-        <ChatSidebar
-          chats={sortedChats}
-          selectedChatId={chatId}
-          onSelectChat={(id) => navigate(`/doctor/chat/${id}`)}
-          onNewChat={() => setShowNewChatDialog(true)}
-          onDeleteChat={handleDeleteChat}
-          isLoading={chatsLoading}
-          isDeleting={deleteChat.isPending}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
+    <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
+      {/* Top Header Bar — always visible */}
+      <ChatHeader
+        chat={chatId ? chatHistory : null}
+        patientName={currentPatientName}
+        onAttachReports={chatId ? () => setShowAttachDialog(true) : undefined}
+        onDeleteChat={chatId ? () => handleDeleteChat(chatId) : undefined}
+        onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+        showSidebarToggle={!!chatId}
+        readAloud={readAloud}
+        onToggleReadAloud={setReadAloud}
+        dashboardPath="/doctor/dashboard"
+        userInitials={userInitials}
+      />
+
+      {/* Main content below header */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <div className={cn(
+          'md:flex shrink-0',
+          chatId && sidebarCollapsed ? 'hidden' : 'flex',
+          !chatId ? 'flex' : '',
+          !chatId && 'w-full md:w-auto',
+        )}>
+          <ChatSidebar
+            chats={sortedChats}
+            selectedChatId={chatId || null}
+            onSelectChat={(id) => navigate(`/doctor/chat/${id}`)}
+            onNewChat={() => setShowNewChatDialog(true)}
+            onDeleteChat={handleDeleteChat}
+            isLoading={chatsLoading}
+            isDeleting={deleteChat.isPending}
+            collapsed={sidebarCollapsed && !!chatId}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          />
+        </div>
+
+        {/* Chat area */}
+        {chatId ? (
+          <div className={cn(
+            'flex-1 flex flex-col overflow-hidden bg-background',
+            !sidebarCollapsed && 'hidden md:flex'
+          )}>
+            <ChatMessages
+              messages={chatHistory?.messages || []}
+              isLoading={historyLoading}
+              isSending={sendMessage.isPending || sendVoiceMessage.isPending}
+            />
+
+            <ChatInput
+              onSend={handleSendMessage}
+              onSendVoice={handleSendVoiceMessage}
+              disabled={!chatId}
+              isLoading={sendMessage.isPending}
+              isVoiceProcessing={sendVoiceMessage.isPending}
+              placeholder="Type a message or speak..."
+            />
+          </div>
+        ) : (
+          /* Empty state — no chat selected */
+          <div className={cn(
+            'flex-1 flex flex-col items-center justify-center',
+            'hidden md:flex'
+          )}>
+            <div className="text-center p-8">
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                <Bot className="w-10 h-10 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">AI Clinical Assistant</h2>
+              <p className="text-muted-foreground mb-6 max-w-sm">
+                Start a conversation about a patient's medical history, get AI-powered
+                insights, and quickly understand patient trends.
+              </p>
+              <Button onClick={() => setShowNewChatDialog(true)} size="lg">
+                <MessageCircle className="w-5 h-5 mr-2" />
+                Start New Chat
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
-
-      <Card className={cn(
-        'flex-1 flex flex-col overflow-hidden',
-        !sidebarCollapsed && 'hidden md:flex'
-      )}>
-        <ChatHeader
-          chat={chatHistory}
-          patientName={currentPatientName}
-          onAttachReports={() => setShowAttachDialog(true)}
-          onDeleteChat={() => handleDeleteChat(chatId)}
-          onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
-          showSidebarToggle={true}
-        />
-
-        <ChatMessages
-          messages={chatHistory?.messages || []}
-          isLoading={historyLoading}
-          isSending={sendMessage.isPending}
-        />
-
-        <ChatInput
-          onSend={handleSendMessage}
-          disabled={!chatId}
-          isLoading={sendMessage.isPending}
-          placeholder="Ask about patient history, lab results, trends..."
-        />
-      </Card>
 
       {/* Doctor-specific New Chat Dialog */}
       <Dialog open={showNewChatDialog} onOpenChange={handleCloseNewDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5" />
@@ -391,6 +320,7 @@ export default function DoctorChat() {
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Patient Selection */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Select Patient *</label>
               <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
@@ -407,17 +337,18 @@ export default function DoctorChat() {
                       <Users className="h-6 w-6 mx-auto mb-2" />
                       No assigned patients
                     </div>
-                    ) : (
-                      patientsData?.patients?.map((patient) => (
-                        <SelectItem key={patient.patient_id} value={patient.patient_id}>
-                          {patient.name}
-                        </SelectItem>
+                  ) : (
+                    patientsData?.patients?.map((patient) => (
+                      <SelectItem key={patient.patient_id} value={patient.patient_id}>
+                        {patient.name}
+                      </SelectItem>
                     ))
                   )}
                 </SelectContent>
               </Select>
             </div>
 
+            {/* Report Selection (only show after patient is selected) */}
             {selectedPatientId && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">Attach Reports (Optional)</label>
@@ -491,15 +422,17 @@ export default function DoctorChat() {
         </DialogContent>
       </Dialog>
 
-      <AttachReportsDialog
-        open={showAttachDialog}
-        onClose={() => setShowAttachDialog(false)}
-        onUpdate={handleUpdateReports}
-        reports={currentPatientReports?.reports || []}
-        currentlyAttached={chatHistory?.attached_report_ids || []}
-        isLoadingReports={false}
-        isUpdating={updateReports.isPending}
-      />
+      {chatId && (
+        <AttachReportsDialog
+          open={showAttachDialog}
+          onClose={() => setShowAttachDialog(false)}
+          onUpdate={handleUpdateReports}
+          reports={currentPatientReports?.reports || []}
+          currentlyAttached={chatHistory?.attached_report_ids || []}
+          isLoadingReports={false}
+          isUpdating={updateReports.isPending}
+        />
+      )}
     </div>
   );
 }

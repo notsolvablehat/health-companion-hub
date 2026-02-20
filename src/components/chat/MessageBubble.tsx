@@ -53,7 +53,7 @@ function MessageBubbleComponent({ message, onSourceClick }: MessageBubbleProps) 
       </div>
 
       {/* Message Content */}
-      <div className={cn('max-w-[75%] space-y-2', isUser ? 'items-end' : 'items-start')}>
+      <div className={cn('max-w-[80%] space-y-1.5', isUser ? 'items-end' : 'items-start')}>
         <div
           className={cn(
             'rounded-2xl px-4 py-3 relative',
@@ -114,15 +114,18 @@ function MessageBubbleComponent({ message, onSourceClick }: MessageBubbleProps) 
             </div>
           )}
 
-          {/* Copy button (visible on hover for AI messages) */}
-          {!isUser && (
+        </div>
+
+        {/* Copy button (visible on hover for AI messages) */}
+        {!isUser && (
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity px-1">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute -bottom-8 left-0 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6"
+                    className="h-6 w-6"
                     onClick={handleCopy}
                   >
                     {copied ? (
@@ -137,21 +140,20 @@ function MessageBubbleComponent({ message, onSourceClick }: MessageBubbleProps) 
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Sources */}
         {!isUser && message.sources && message.sources.length > 0 && (
-          <div className="flex flex-wrap gap-1 px-1">
-            <span className="text-xs text-muted-foreground">Sources:</span>
+          <div className="flex items-center flex-wrap gap-1.5 pt-1 px-1">
+            <span className="text-xs font-medium text-muted-foreground">Sources:</span>
             {message.sources.map((sourceId, idx) => (
               <button
                 key={sourceId}
                 onClick={() => onSourceClick?.(sourceId)}
-                className="text-xs text-primary hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded-full transition-colors"
               >
                 Report {idx + 1}
-                {idx < message.sources!.length - 1 && ','}
               </button>
             ))}
           </div>
@@ -159,7 +161,7 @@ function MessageBubbleComponent({ message, onSourceClick }: MessageBubbleProps) 
 
         {/* Timestamp */}
         {timestamp && (
-          <p className="text-xs text-muted-foreground px-1">
+          <p className="text-[11px] text-muted-foreground/70 px-1 pt-0.5">
             {formatDistanceToNow(parseBackendDate(timestamp) || new Date(), { addSuffix: true })}
           </p>
         )}

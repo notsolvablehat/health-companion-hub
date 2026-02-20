@@ -54,3 +54,14 @@ export function useUpdateAppointmentStatus() {
     },
   });
 }
+
+/**
+ * Hook to fetch booked time slots for a doctor on a specific date
+ */
+export function useBookedSlots(doctorId: string | undefined, date: string | undefined) {
+  return useQuery({
+    queryKey: ['booked-slots', doctorId, date],
+    queryFn: () => appointmentsService.getBookedSlots(doctorId!, date!),
+    enabled: !!doctorId && !!date,
+  });
+}

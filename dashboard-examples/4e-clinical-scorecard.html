@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard — Clinical Scorecard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 28px;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* ─── Header ─── */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 36px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .h-left { display: flex; align-items: baseline; gap: 16px; }
+        .h-title { font-size: 16px; font-weight: 600; color: #fff; }
+        .h-sub { font-size: 12px; color: #555; }
+
+        .btn-sm {
+            background: #1a1a1a; border: 1px solid #222;
+            padding: 7px 16px; border-radius: 6px;
+            color: #888; font-size: 11px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-sm:hover { background: #222; color: #ccc; }
+
+        /* ─── Scorecard Grid ─── */
+        .scorecard {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 36px;
+        }
+
+        .sc-header {
+            display: grid;
+            grid-template-columns: 160px 1fr 90px 90px 90px 80px;
+            gap: 0;
+            padding: 10px 16px;
+            font-size: 10px;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .sc-row {
+            display: grid;
+            grid-template-columns: 160px 1fr 90px 90px 90px 80px;
+            gap: 0;
+            align-items: center;
+            padding: 14px 16px;
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .sc-row:hover {
+            background: #141414;
+            border-color: #2a2a2a;
+        }
+
+        .sc-domain {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sc-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .sc-dot.green { background: #00ff88; }
+        .sc-dot.amber { background: #ffaa00; }
+        .sc-dot.red { background: #ff4444; }
+        .sc-dot.blue { background: #00aaff; }
+
+        .sc-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #ccc;
+        }
+
+        .sc-spark {
+            padding: 0 20px;
+            height: 32px;
+        }
+
+        .sc-val {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            text-align: center;
+        }
+
+        .sc-target {
+            font-size: 12px;
+            color: #555;
+            text-align: center;
+        }
+
+        .sc-delta {
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .sc-delta.good { color: #00ff88; }
+        .sc-delta.bad { color: #ff4444; }
+        .sc-delta.warn { color: #ffaa00; }
+
+        .sc-grade {
+            text-align: center;
+        }
+
+        .grade-pill {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .grade-a { background: rgba(0,255,136,0.1); color: #00ff88; }
+        .grade-b { background: rgba(0,170,255,0.1); color: #00aaff; }
+        .grade-c { background: rgba(255,170,0,0.1); color: #ffaa00; }
+        .grade-d { background: rgba(255,68,68,0.1); color: #ff4444; }
+
+        /* ─── Section Label ─── */
+        .section-label {
+            font-size: 10px;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
+
+        /* ─── Chart Grid ─── */
+        .chart-grid {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .cg-2 { grid-template-columns: 1fr 1fr; }
+        .cg-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .cg-1 { grid-template-columns: 1fr; }
+
+        .panel {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .p-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .p-t {
+            font-size: 11px; color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.8px; font-weight: 500;
+        }
+
+        .p-badge {
+            font-size: 10px; padding: 3px 8px;
+            border-radius: 4px; background: #1a1a1a; color: #666;
+        }
+
+        .c-box { position: relative; height: 260px; }
+        .c-box.tall { height: 320px; }
+        .c-box.short { height: 220px; }
+
+        /* ─── Compliance Bar ─── */
+        .compliance-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .comp-item {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 18px;
+        }
+
+        .comp-item-label {
+            font-size: 10px; color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .comp-item-val {
+            font-size: 26px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .comp-bar-track {
+            height: 5px;
+            background: #1a1a1a;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .comp-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+        }
+
+        .comp-item-sub {
+            font-size: 10px;
+            color: #555;
+        }
+
+        /* ─── Light Mode ─── */
+        body.light-mode { background: #f5f5f7; }
+        body.light-mode .header { border-color: #e0e0e0; }
+        body.light-mode .h-title { color: #1a1a1a; }
+        body.light-mode .btn-sm { background: #fff; border-color: #ddd; color: #666; }
+        body.light-mode .sc-header { color: #aaa; }
+        body.light-mode .sc-row { background: #fff; border-color: #e8e8e8; }
+        body.light-mode .sc-row:hover { background: #fafafa; border-color: #ddd; }
+        body.light-mode .sc-name { color: #333; }
+        body.light-mode .sc-val { color: #1a1a1a; }
+        body.light-mode .sc-target { color: #aaa; }
+        body.light-mode .panel,
+        body.light-mode .comp-item { background: #fff; border-color: #e8e8e8; }
+        body.light-mode .comp-item-val { color: #1a1a1a; }
+        body.light-mode .p-t, body.light-mode .comp-item-label,
+        body.light-mode .section-label { color: #999; }
+        body.light-mode .p-badge { background: #f0f0f0; color: #888; }
+        body.light-mode .comp-bar-track { background: #eee; }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 1100px) {
+            .sc-header, .sc-row {
+                grid-template-columns: 140px 1fr 70px 70px 70px 60px;
+            }
+            .cg-3 { grid-template-columns: 1fr 1fr; }
+            .compliance-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 16px; }
+            .sc-header, .sc-row {
+                grid-template-columns: 120px 1fr 60px 60px;
+            }
+            .sc-header > :nth-child(5),
+            .sc-header > :nth-child(6),
+            .sc-row > :nth-child(5),
+            .sc-row > :nth-child(6) { display: none; }
+            .cg-2, .cg-3 { grid-template-columns: 1fr; }
+            .compliance-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="h-left">
+                <div class="h-title">Clinical Scorecard</div>
+                <div class="h-sub">Dr. Sharma · Internal Medicine · Q1 2026</div>
+            </div>
+            <button class="btn-sm" onclick="document.body.classList.toggle('light-mode')">Theme</button>
+        </div>
+
+        <!-- Scorecard Table -->
+        <div class="scorecard">
+            <div class="sc-header">
+                <div>Domain</div>
+                <div>Trend (6mo)</div>
+                <div style="text-align:center">Current</div>
+                <div style="text-align:center">Target</div>
+                <div style="text-align:center">Δ MoM</div>
+                <div style="text-align:center">Grade</div>
+            </div>
+
+            <div class="sc-row">
+                <div class="sc-domain"><span class="sc-dot green"></span><span class="sc-name">Glycemic Control</span></div>
+                <div class="sc-spark"><canvas id="sp1"></canvas></div>
+                <div class="sc-val">72%</div>
+                <div class="sc-target">70%</div>
+                <div class="sc-delta good">+4%</div>
+                <div class="sc-grade"><span class="grade-pill grade-a">A</span></div>
+            </div>
+
+            <div class="sc-row">
+                <div class="sc-domain"><span class="sc-dot green"></span><span class="sc-name">BP Control</span></div>
+                <div class="sc-spark"><canvas id="sp2"></canvas></div>
+                <div class="sc-val">68%</div>
+                <div class="sc-target">65%</div>
+                <div class="sc-delta good">+3%</div>
+                <div class="sc-grade"><span class="grade-pill grade-a">A</span></div>
+            </div>
+
+            <div class="sc-row">
+                <div class="sc-domain"><span class="sc-dot amber"></span><span class="sc-name">Sepsis Bundle</span></div>
+                <div class="sc-spark"><canvas id="sp3"></canvas></div>
+                <div class="sc-val">84%</div>
+                <div class="sc-target">90%</div>
+                <div class="sc-delta warn">-2%</div>
+                <div class="sc-grade"><span class="grade-pill grade-c">C</span></div>
+            </div>
+
+            <div class="sc-row">
+                <div class="sc-domain"><span class="sc-dot blue"></span><span class="sc-name">VTE Prophylaxis</span></div>
+                <div class="sc-spark"><canvas id="sp4"></canvas></div>
+                <div class="sc-val">91%</div>
+                <div class="sc-target">90%</div>
+                <div class="sc-delta good">+1%</div>
+                <div class="sc-grade"><span class="grade-pill grade-a">A</span></div>
+            </div>
+
+            <div class="sc-row">
+                <div class="sc-domain"><span class="sc-dot red"></span><span class="sc-name">Falls Prevention</span></div>
+                <div class="sc-spark"><canvas id="sp5"></canvas></div>
+                <div class="sc-val">2.1</div>
+                <div class="sc-target">&lt;1.5</div>
+                <div class="sc-delta bad">+0.4</div>
+                <div class="sc-grade"><span class="grade-pill grade-d">D</span></div>
+            </div>
+
+            <div class="sc-row">
+                <div class="sc-domain"><span class="sc-dot blue"></span><span class="sc-name">Hand Hygiene</span></div>
+                <div class="sc-spark"><canvas id="sp6"></canvas></div>
+                <div class="sc-val">88%</div>
+                <div class="sc-target">85%</div>
+                <div class="sc-delta good">+2%</div>
+                <div class="sc-grade"><span class="grade-pill grade-b">B</span></div>
+            </div>
+
+            <div class="sc-row">
+                <div class="sc-domain"><span class="sc-dot amber"></span><span class="sc-name">Documentation</span></div>
+                <div class="sc-spark"><canvas id="sp7"></canvas></div>
+                <div class="sc-val">74%</div>
+                <div class="sc-target">80%</div>
+                <div class="sc-delta warn">+1%</div>
+                <div class="sc-grade"><span class="grade-pill grade-c">C</span></div>
+            </div>
+        </div>
+
+        <!-- Compliance Strip -->
+        <div class="section-label">Quality Indicators</div>
+        <div class="compliance-grid">
+            <div class="comp-item">
+                <div class="comp-item-label">CLABSI Rate / 1000 Line-Days</div>
+                <div class="comp-item-val">0.8</div>
+                <div class="comp-bar-track"><div class="comp-bar-fill" style="width:30%;background:#00ff88"></div></div>
+                <div class="comp-item-sub">National benchmark: 1.4 — well below</div>
+            </div>
+            <div class="comp-item">
+                <div class="comp-item-label">CAUTI Rate / 1000 Catheter-Days</div>
+                <div class="comp-item-val">1.2</div>
+                <div class="comp-bar-track"><div class="comp-bar-fill" style="width:55%;background:#00aaff"></div></div>
+                <div class="comp-item-sub">National benchmark: 1.7 — below average</div>
+            </div>
+            <div class="comp-item">
+                <div class="comp-item-label">Pressure Injury Rate</div>
+                <div class="comp-item-val">1.8%</div>
+                <div class="comp-bar-track"><div class="comp-bar-fill" style="width:72%;background:#ffaa00"></div></div>
+                <div class="comp-item-sub">Target: &lt;1.5% — needs improvement</div>
+            </div>
+            <div class="comp-item">
+                <div class="comp-item-label">Medication Error Rate</div>
+                <div class="comp-item-val">0.3%</div>
+                <div class="comp-bar-track"><div class="comp-bar-fill" style="width:15%;background:#00ff88"></div></div>
+                <div class="comp-item-sub">Target: &lt;0.5% — meets benchmark</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="section-label">Deep Dive</div>
+        <div class="chart-grid cg-2">
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">HbA1c Distribution</div>
+                    <div class="p-badge">Diabetic panel · n=42</div>
+                </div>
+                <div class="c-box">
+                    <canvas id="hba1cChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">BP Control — At Target</div>
+                    <div class="p-badge">&lt;140/90 compliance</div>
+                </div>
+                <div class="c-box">
+                    <canvas id="bpChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-grid cg-3">
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">Sepsis Bundle Compliance</div>
+                    <div class="p-badge">3-hour + 6-hour</div>
+                </div>
+                <div class="c-box short">
+                    <canvas id="sepsisChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">Readmission by Cause</div>
+                    <div class="p-badge">30-day</div>
+                </div>
+                <div class="c-box short">
+                    <canvas id="readmitChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">Outcomes — This Quarter</div>
+                    <div class="p-badge">vs benchmarks</div>
+                </div>
+                <div class="c-box short">
+                    <canvas id="outcomeRadar"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-grid cg-2">
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">eGFR Trends — CKD Patients</div>
+                    <div class="p-badge">ml/min/1.73m² · 12 months</div>
+                </div>
+                <div class="c-box">
+                    <canvas id="egfrChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="p-head">
+                    <div class="p-t">Polypharmacy Distribution</div>
+                    <div class="p-badge">Active medications per patient</div>
+                </div>
+                <div class="c-box">
+                    <canvas id="polyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const C = {
+            g: '#00ff88', b: '#00aaff', r: '#ff4444', a: '#ffaa00',
+            p: '#8b5cf6', t: '#14b8a6',
+            grid: 'rgba(255,255,255,0.04)', tick: '#555'
+        };
+
+        const S = {
+            y: { beginAtZero: true, grid: { color: C.grid }, ticks: { color: C.tick, font: { size: 10 } } },
+            x: { grid: { display: false }, ticks: { color: C.tick, font: { size: 10 } } }
+        };
+
+        const leg = { position: 'bottom', labels: { color: '#888', boxWidth: 10, padding: 12, font: { size: 10 } } };
+
+        // Sparkline helper
+        function spark(id, data, color) {
+            new Chart(document.getElementById(id), {
+                type: 'line',
+                data: {
+                    labels: data.map((_, i) => i),
+                    datasets: [{ data, borderColor: color, borderWidth: 1.5, tension: 0.4, pointRadius: 0, fill: false }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: { x: { display: false }, y: { display: false } }
+                }
+            });
+        }
+
+        spark('sp1', [60, 62, 65, 68, 68, 72], C.g);
+        spark('sp2', [58, 60, 62, 64, 65, 68], C.g);
+        spark('sp3', [90, 88, 86, 88, 86, 84], C.a);
+        spark('sp4', [85, 87, 88, 89, 90, 91], C.b);
+        spark('sp5', [1.2, 1.4, 1.6, 1.8, 1.7, 2.1], C.r);
+        spark('sp6', [82, 84, 85, 86, 86, 88], C.b);
+        spark('sp7', [68, 70, 71, 72, 73, 74], C.a);
+
+        // HbA1c Distribution (histogram-style bar)
+        new Chart(document.getElementById('hba1cChart'), {
+            type: 'bar',
+            data: {
+                labels: ['<6.0', '6.0-6.5', '6.5-7.0', '7.0-8.0', '8.0-9.0', '9.0-10.0', '>10.0'],
+                datasets: [{
+                    label: 'Patients',
+                    data: [3, 8, 12, 10, 5, 3, 1],
+                    backgroundColor: function(ctx) {
+                        const colors = [C.g, C.g, C.g, C.b, C.a, C.r, C.r];
+                        return colors[ctx.dataIndex];
+                    },
+                    borderRadius: 4, borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    annotation: {}
+                },
+                scales: {
+                    ...S,
+                    x: { ...S.x, title: { display: true, text: 'HbA1c %', color: '#555', font: { size: 10 } } }
+                }
+            }
+        });
+
+        // BP Control trend (dual line — systolic and target)
+        new Chart(document.getElementById('bpChart'), {
+            type: 'line',
+            data: {
+                labels: ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+                datasets: [{
+                    label: '% at target (<140/90)',
+                    data: [58, 60, 62, 64, 65, 68],
+                    borderColor: C.g,
+                    backgroundColor: 'rgba(0,255,136,0.06)',
+                    fill: true, tension: 0.3, borderWidth: 2,
+                    pointRadius: 4, pointBackgroundColor: C.g,
+                    pointBorderColor: '#0a0a0a', pointBorderWidth: 2
+                }, {
+                    label: 'Target (65%)',
+                    data: [65, 65, 65, 65, 65, 65],
+                    borderColor: '#444', borderWidth: 1,
+                    borderDash: [4, 3], pointRadius: 0, fill: false
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: leg },
+                scales: { ...S, y: { ...S.y, min: 50, max: 80, ticks: { ...S.y.ticks, callback: v => v + '%' } } }
+            }
+        });
+
+        // Sepsis Bundle (grouped bar)
+        new Chart(document.getElementById('sepsisChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+                datasets: [{
+                    label: '3-hour bundle',
+                    data: [88, 86, 85, 87, 84, 82],
+                    backgroundColor: C.b, borderRadius: 4
+                }, {
+                    label: '6-hour bundle',
+                    data: [82, 80, 78, 80, 78, 76],
+                    backgroundColor: C.a, borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: leg },
+                scales: { ...S, y: { ...S.y, min: 60, ticks: { ...S.y.ticks, callback: v => v + '%' } } }
+            }
+        });
+
+        // Readmission by Cause (horizontal bar)
+        new Chart(document.getElementById('readmitChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Heart Failure', 'Pneumonia', 'DKA', 'COPD Exac.', 'Wound Inf.', 'Other'],
+                datasets: [{
+                    data: [8, 5, 4, 3, 2, 3],
+                    backgroundColor: [C.r, C.a, C.b, C.a, C.p, '#555'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: C.grid }, ticks: { color: C.tick, font: { size: 10 } } },
+                    y: { grid: { display: false }, ticks: { color: '#aaa', font: { size: 10 } } }
+                }
+            }
+        });
+
+        // Outcome Radar
+        new Chart(document.getElementById('outcomeRadar'), {
+            type: 'radar',
+            data: {
+                labels: ['Mortality', 'Readmit', 'LOS', 'Infection', 'Patient Sat', 'Cost Idx'],
+                datasets: [{
+                    label: 'Your Unit',
+                    data: [92, 88, 82, 90, 91, 78],
+                    borderColor: C.g,
+                    backgroundColor: 'rgba(0,255,136,0.08)',
+                    borderWidth: 2, pointRadius: 3, pointBackgroundColor: C.g
+                }, {
+                    label: 'Benchmark',
+                    data: [80, 80, 80, 80, 80, 80],
+                    borderColor: '#444',
+                    backgroundColor: 'rgba(100,100,100,0.04)',
+                    borderWidth: 1, borderDash: [3, 3], pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: leg },
+                scales: {
+                    r: {
+                        grid: { color: 'rgba(255,255,255,0.06)' },
+                        angleLines: { color: 'rgba(255,255,255,0.06)' },
+                        ticks: { display: false },
+                        pointLabels: { color: '#888', font: { size: 9 } },
+                        suggestedMin: 50, suggestedMax: 100
+                    }
+                }
+            }
+        });
+
+        // eGFR Trends (multi-line, patient cohorts)
+        new Chart(document.getElementById('egfrChart'), {
+            type: 'line',
+            data: {
+                labels: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+                datasets: [{
+                    label: 'Stage 3a (45-59)',
+                    data: [52, 51, 50, 50, 49, 48, 49, 48, 47, 48, 47, 46],
+                    borderColor: C.a, borderWidth: 2, tension: 0.3,
+                    pointRadius: 3, pointBackgroundColor: C.a, fill: false
+                }, {
+                    label: 'Stage 3b (30-44)',
+                    data: [38, 37, 36, 36, 35, 34, 35, 34, 33, 33, 32, 32],
+                    borderColor: C.r, borderWidth: 2, tension: 0.3,
+                    pointRadius: 3, pointBackgroundColor: C.r, fill: false
+                }, {
+                    label: 'Stage 2 (60-89)',
+                    data: [72, 72, 71, 73, 72, 71, 72, 71, 70, 72, 71, 70],
+                    borderColor: C.g, borderWidth: 2, tension: 0.3,
+                    pointRadius: 3, pointBackgroundColor: C.g, fill: false
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: leg },
+                scales: {
+                    ...S,
+                    y: {
+                        ...S.y, min: 20, max: 90,
+                        title: { display: true, text: 'eGFR', color: '#555', font: { size: 10 } }
+                    }
+                }
+            }
+        });
+
+        // Polypharmacy (bar histogram)
+        new Chart(document.getElementById('polyChart'), {
+            type: 'bar',
+            data: {
+                labels: ['0-2', '3-4', '5-6', '7-8', '9-10', '11+'],
+                datasets: [{
+                    label: 'Patients',
+                    data: [12, 18, 22, 14, 8, 4],
+                    backgroundColor: function(ctx) {
+                        const c = [C.g, C.g, C.b, C.a, C.r, C.r];
+                        return c[ctx.dataIndex];
+                    },
+                    borderRadius: 4, borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    ...S,
+                    x: { ...S.x, title: { display: true, text: 'Active medications', color: '#555', font: { size: 10 } } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

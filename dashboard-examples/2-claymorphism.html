@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - Claymorphism</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #e0e5ec;
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: #e0e5ec;
+            border-radius: 30px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 
+                15px 15px 30px #bebebe,
+                -15px -15px 30px #ffffff;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            color: #2c3e50;
+            font-weight: 700;
+        }
+
+        .header .subtitle {
+            font-size: 16px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        .time-badge {
+            background: #e0e5ec;
+            padding: 12px 24px;
+            border-radius: 20px;
+            box-shadow: 
+                inset 5px 5px 10px #bebebe,
+                inset -5px -5px 10px #ffffff;
+            font-size: 15px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .clay-card {
+            background: #e0e5ec;
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 
+                10px 10px 20px #bebebe,
+                -10px -10px 20px #ffffff;
+            transition: all 0.3s ease;
+        }
+
+        .clay-card:hover {
+            box-shadow: 
+                15px 15px 30px #bebebe,
+                -15px -15px 30px #ffffff;
+        }
+
+        .stat-card {
+            position: relative;
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 20px;
+            box-shadow: 
+                inset 3px 3px 6px #bebebe,
+                inset -3px -3px 6px #ffffff;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #7f8c8d;
+            font-weight: 500;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 40px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .stat-change {
+            font-size: 13px;
+            color: #27ae60;
+            font-weight: 600;
+        }
+
+        .stat-change.negative {
+            color: #e74c3c;
+        }
+
+        .schedule-card {
+            grid-column: 1 / -1;
+        }
+
+        .schedule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .schedule-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .schedule-nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: none;
+            background: #e0e5ec;
+            box-shadow: 
+                5px 5px 10px #bebebe,
+                -5px -5px 10px #ffffff;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:active {
+            box-shadow: 
+                inset 3px 3px 6px #bebebe,
+                inset -3px -3px 6px #ffffff;
+        }
+
+        .appointments-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .appointment-item {
+            background: #e0e5ec;
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 
+                inset 3px 3px 6px #bebebe,
+                inset -3px -3px 6px #ffffff;
+        }
+
+        .appointment-time {
+            background: #e0e5ec;
+            border-radius: 15px;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 
+                5px 5px 10px #bebebe,
+                -5px -5px 10px #ffffff;
+            min-width: 100px;
+        }
+
+        .appointment-time .time {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .appointment-time .period {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 3px;
+        }
+
+        .appointment-details {
+            flex: 1;
+        }
+
+        .patient-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .appointment-type {
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+
+        .severity-badge {
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 
+                inset 2px 2px 4px rgba(0,0,0,0.1),
+                inset -2px -2px 4px rgba(255,255,255,0.5);
+        }
+
+        .badge-critical {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            color: white;
+        }
+
+        .badge-followup {
+            background: linear-gradient(135deg, #ffd93d, #f9ca24);
+            color: #2c3e50;
+        }
+
+        .badge-new {
+            background: linear-gradient(135deg, #6bcf7f, #51cf66);
+            color: white;
+        }
+
+        .chart-card {
+            min-height: 320px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 240px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .appointment-item {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <div>
+                    <h1>Good Morning, Dr. Sharma 👋</h1>
+                    <div class="subtitle">You have 8 appointments today</div>
+                </div>
+                <div class="time-badge">
+                    <span>📅 Wednesday, February 19</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Stat Cards -->
+            <div class="clay-card stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-label">Total Patients</div>
+                <div class="stat-value">50</div>
+                <div class="stat-change">+12% this month</div>
+            </div>
+
+            <div class="clay-card stat-card">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-label">Critical</div>
+                <div class="stat-value">2</div>
+                <div class="stat-change negative">Needs attention</div>
+            </div>
+
+            <div class="clay-card stat-card">
+                <div class="stat-icon">🔄</div>
+                <div class="stat-label">Follow-ups</div>
+                <div class="stat-value">12</div>
+                <div class="stat-change">This week</div>
+            </div>
+
+            <div class="clay-card stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-label">Completed</div>
+                <div class="stat-value">3</div>
+                <div class="stat-change">Today</div>
+            </div>
+
+            <!-- Patient Severity Chart -->
+            <div class="clay-card chart-card">
+                <div class="stat-label">Patient Distribution</div>
+                <div class="chart-container">
+                    <canvas id="severityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Weekly Trends -->
+            <div class="clay-card chart-card" style="grid-column: span 2;">
+                <div class="stat-label">This Week's Activity</div>
+                <div class="chart-container">
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Today's Schedule -->
+            <div class="clay-card schedule-card">
+                <div class="schedule-header">
+                    <div class="schedule-title">Today's Schedule</div>
+                    <div class="schedule-nav">
+                        <button class="nav-btn">←</button>
+                        <button class="nav-btn">→</button>
+                    </div>
+                </div>
+                <div class="appointments-list">
+                    <div class="appointment-item">
+                        <div class="appointment-time">
+                            <div class="time">09:00</div>
+                            <div class="period">AM</div>
+                        </div>
+                        <div class="appointment-details">
+                            <div class="patient-name">Rajesh Kumar</div>
+                            <div class="appointment-type">Diabetes • Blood Sugar: 180 mg/dL</div>
+                        </div>
+                        <div class="severity-badge badge-critical">Critical</div>
+                    </div>
+
+                    <div class="appointment-item">
+                        <div class="appointment-time">
+                            <div class="time">10:30</div>
+                            <div class="period">AM</div>
+                        </div>
+                        <div class="appointment-details">
+                            <div class="patient-name">Priya Sharma</div>
+                            <div class="appointment-type">Follow-up • Hypertension</div>
+                        </div>
+                        <div class="severity-badge badge-followup">Follow-up</div>
+                    </div>
+
+                    <div class="appointment-item">
+                        <div class="appointment-time">
+                            <div class="time">11:00</div>
+                            <div class="period">AM</div>
+                        </div>
+                        <div class="appointment-details">
+                            <div class="patient-name">Amit Patel</div>
+                            <div class="appointment-type">First Visit • General Consultation</div>
+                        </div>
+                        <div class="severity-badge badge-new">New</div>
+                    </div>
+
+                    <div class="appointment-item">
+                        <div class="appointment-time">
+                            <div class="time">02:00</div>
+                            <div class="period">PM</div>
+                        </div>
+                        <div class="appointment-details">
+                            <div class="patient-name">Sunita Reddy</div>
+                            <div class="appointment-type">Follow-up • Cardiac Review</div>
+                        </div>
+                        <div class="severity-badge badge-followup">Follow-up</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Severity Doughnut Chart
+        const severityCtx = document.getElementById('severityChart').getContext('2d');
+        new Chart(severityCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Critical', 'High Risk', 'Moderate', 'Stable'],
+                datasets: [{
+                    data: [2, 5, 15, 28],
+                    backgroundColor: ['#ff6b6b', '#ffd93d', '#4dabf7', '#51cf66'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: { size: 12, weight: '600' },
+                            color: '#2c3e50'
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+
+        // Weekly Activity Chart
+        const weeklyCtx = document.getElementById('weeklyChart').getContext('2d');
+        new Chart(weeklyCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                datasets: [{
+                    label: 'Appointments',
+                    data: [12, 15, 8, 18, 14, 10],
+                    backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                    borderRadius: 10,
+                    barThickness: 40
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { color: '#7f8c8d', font: { weight: '600' } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#7f8c8d', font: { weight: '600' } }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

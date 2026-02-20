@@ -9,6 +9,7 @@ import type {
   SendMessageRequest,
   SendMessageResponse,
   UpdateChatReportsRequest,
+  VoiceLanguage,
 } from '@/types/chat';
 
 export const chatService = {
@@ -65,6 +66,28 @@ export const chatService = {
     data: UpdateChatReportsRequest
   ): Promise<Chat> => {
     const response = await api.patch<Chat>(`/ai/chat/${chatId}/reports`, data);
+    return response.data;
+  },
+
+  /**
+   * Send a voice message and get AI response
+   */
+  sendVoiceMessage: async (
+    chatId: string,
+    audioBlob: Blob,
+    language: VoiceLanguage = 'english',
+    attachReportIds?: string[]
+  ): Promise<SendMessageResponse> => {
+    const formData = new FormData();
+    formData.append('audio_file', audioBlob, 'message.webm');
+    formData.append('language', language);
+    if (attachReportIds && attachReportIds.length > 0) {
+      formData.append('attach_report_ids', attachReportIds.join(','));
+    }
+    const response = await api.postFormData<SendMessageResponse>(
+      `/ai/chat/${chatId}/voice-message`,
+      formData
+    );
     return response.data;
   },
 };

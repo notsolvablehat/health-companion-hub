@@ -152,6 +152,69 @@ async function request<T>(
   }
 }
 
+// FormData request (for file uploads - multipart/form-data)
+async function requestFormData<T>(
+  endpoint: string,
+  formData: FormData,
+  config: RequestConfig = {}
+): Promise<ApiResponse<T>> {
+  const { params, skipAuth = false } = config;
+
+  const requestHeaders: Record<string, string> = {};
+  // Do NOT set Content-Type — browser will set it with boundary for multipart/form-data
+
+  if (!skipAuth) {
+    const token = tokenManager.get();
+    if (token) {
+      requestHeaders['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
+  try {
+    const response = await fetch(buildUrl(endpoint, params), {
+      method: 'POST',
+      headers: requestHeaders,
+      body: formData,
+    });
+
+    if (response.status === 401) {
+      tokenManager.clear();
+      window.location.href = '/login';
+      throw createApiError('Session expired. Please login again.', 401);
+    }
+
+    if (response.status === 204) {
+      return { data: null as T, status: 204, ok: true };
+    }
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      throw createApiError(
+        responseData.detail || responseData.message || 'An error occurred',
+        response.status,
+        responseData.errors
+      );
+    }
+
+    return {
+      data: responseData as T,
+      status: response.status,
+      ok: true,
+    };
+  } catch (error) {
+    if (isApiError(error)) {
+      throw error;
+    }
+
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw createApiError('Network error. Please check your connection.', 0);
+    }
+
+    throw createApiError('An unexpected error occurred.', 500);
+  }
+}
+
 // HTTP method shortcuts
 export const api = {
   get: <T>(endpoint: string, config?: RequestConfig) => 
@@ -168,6 +231,9 @@ export const api = {
     
   delete: <T>(endpoint: string, config?: RequestConfig) => 
     request<T>('DELETE', endpoint, undefined, config),
+
+  postFormData: <T>(endpoint: string, formData: FormData, config?: RequestConfig) =>
+    requestFormData<T>(endpoint, formData, config),
 };
 
 export default api;

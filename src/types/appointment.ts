@@ -40,3 +40,11 @@ export interface AppointmentsResponse {
   appointments: Appointment[];
   count: number;
 }
+
+export interface BookedSlotsResponse {
+  doctor_id: string;
+  doctor_name?: string;
+  date: string; // "YYYY-MM-DD" format
+  booked_slots: Appointment[]; // Full appointment objects
+  total_booked: number;
+}

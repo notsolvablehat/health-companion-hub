@@ -7,6 +7,7 @@ import type {
   ChatHistory,
   StartChatRequest,
   SendMessageRequest,
+  SendVoiceMessageRequest,
 } from '@/types/chat';
 
 /**
@@ -133,6 +134,29 @@ export function useUpdateChatReports(chatId: string) {
   return useMutation({
     mutationFn: (data: { report_ids: string[]; action: 'add' | 'remove' | 'replace' }) =>
       chatService.updateReports(chatId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.CHAT_DETAIL(chatId),
+      });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CHATS });
+    },
+  });
+}
+
+/**
+ * Hook to send a voice message in a chat
+ */
+export function useSendVoiceMessage(chatId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: SendVoiceMessageRequest) =>
+      chatService.sendVoiceMessage(
+        chatId,
+        data.audioBlob,
+        data.language,
+        data.attachReportIds
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.CHAT_DETAIL(chatId),

@@ -29,6 +29,7 @@ import {
   Cell,
   Legend,
   ResponsiveContainer,
+  Tooltip,
 } from 'recharts';
 import {
   AlertTriangle,
@@ -311,6 +312,10 @@ export default function DoctorDashboard() {
                         return str.length > 12 ? `${str.slice(0, 10)}...` : str;
                       }}
                     />
+                    <Tooltip
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px', color: 'hsl(var(--foreground))' }}
+                      cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
+                    />
                     <Bar dataKey="count" fill="hsl(142, 76%, 36%)" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -338,6 +343,10 @@ export default function DoctorDashboard() {
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
                   <XAxis dataKey="month" className="text-xs" />
                   <YAxis className="text-xs" />
+                  <Tooltip
+                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px', color: 'hsl(var(--foreground))' }}
+                    formatter={(value: number, name: string) => [`${value}%`, name]}
+                  />
                   <Legend 
                     wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
                     iconType="line"
@@ -385,6 +394,10 @@ export default function DoctorDashboard() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
                 <XAxis dataKey="day" className="text-xs" />
                 <YAxis className="text-xs" />
+                <Tooltip
+                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px', color: 'hsl(var(--foreground))' }}
+                  cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
+                />
                 <Legend 
                   wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
                   iconType="square"
@@ -432,6 +445,9 @@ export default function DoctorDashboard() {
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
                   <XAxis dataKey="time" className="text-xs" />
                   <YAxis className="text-xs" />
+                  <Tooltip
+                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px', color: 'hsl(var(--foreground))' }}
+                  />
                   <Legend 
                     wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
                     iconType="line"
@@ -483,6 +499,9 @@ export default function DoctorDashboard() {
               <div className="h-[280px] flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
+                    <Tooltip
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px', color: 'hsl(var(--foreground))' }}
+                    />
                     <Pie
                       data={visitTypesData}
                       cx="50%"

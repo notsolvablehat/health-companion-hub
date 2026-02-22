@@ -36,7 +36,7 @@ export function PersonalDocumentCard({ document }: PersonalDocumentCardProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const { mutate: deleteDoc } = useDeleteDocument();
 
-  const handleDownload = async (e: React.Event) => {
+  const handleDownload = async (e: Event) => {
     e.preventDefault(); // Prevent menu from closing immediately
     
     if (isDownloading) return;

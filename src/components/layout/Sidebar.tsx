@@ -92,7 +92,7 @@ export function Sidebar({ role, isCollapsed = false }: SidebarProps) {
         <Link to={role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard'} className="flex items-center gap-2.5">
           <Activity className="w-5 h-5 text-sidebar-foreground" />
           {!isCollapsed && (
-            <span className="font-semibold text-sm tracking-tight text-sidebar-foreground">HealthCare</span>
+            <span className="font-semibold text-sm tracking-tight text-sidebar-foreground">Swasth Dekhbhal</span>
           )}
         </Link>
       </div>

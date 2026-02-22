@@ -123,15 +123,15 @@ export default function Register() {
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         {apiError && (
-          <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in">
+          <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm animate-fade-in">
             {apiError}
           </div>
         )}
 
         {/* Role Selection */}
         <div className="space-y-3">
-          <label className="text-sm font-medium text-foreground">
-            I am a <span className="text-destructive">*</span>
+          <label className="text-sm font-medium" style={{ color: '#1e293b' }}>
+            I am a <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-2 gap-3">
             {roleOptions.map((option) => {
@@ -146,24 +146,24 @@ export default function Register() {
                   className={cn(
                     'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200',
                     isSelected
-                      ? 'border-primary bg-primary/5 shadow-soft'
-                      : 'border-border hover:border-primary/50 bg-transparent'
+                      ? 'border-teal-400 bg-teal-50 shadow-md shadow-teal-100'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
                   )}
                 >
                   <div className={cn(
                     'p-2.5 rounded-lg transition-colors',
-                    isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                    isSelected ? 'bg-gradient-to-br from-teal-500 to-emerald-600 text-white' : 'bg-slate-100 text-slate-500'
                   )}>
                     <Icon className="w-5 h-5" />
                   </div>
                   <div className="text-center">
                     <div className={cn(
                       'font-medium',
-                      isSelected ? 'text-primary' : 'text-foreground'
+                      isSelected ? 'text-teal-700' : 'text-slate-700'
                     )}>
                       {option.label}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
+                    <div className="text-xs text-slate-400 mt-0.5">
                       {option.description}
                     </div>
                   </div>
@@ -247,7 +247,7 @@ export default function Register() {
         <Button
           type="submit"
           size="lg"
-          className="w-full"
+          className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white border-0 shadow-lg shadow-teal-500/20 hover:shadow-teal-500/30 transition-all"
           disabled={isSubmitting}
         >
           {isSubmitting ? (
@@ -263,9 +263,9 @@ export default function Register() {
           )}
         </Button>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm" style={{ color: '#64748b' }}>
           Already have an account?{' '}
-          <Link to="/login" className="text-primary font-medium hover:underline">
+          <Link to="/login" className="text-teal-600 font-medium hover:text-teal-700 hover:underline transition-colors">
             Sign in
           </Link>
         </p>

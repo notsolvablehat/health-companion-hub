@@ -81,7 +81,7 @@ export default function Login() {
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         {apiError && (
-          <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in">
+          <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm animate-fade-in">
             {apiError}
           </div>
         )}
@@ -140,7 +140,7 @@ export default function Login() {
         <div className="flex items-center justify-end">
           <Link
             to="/forgot-password"
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-teal-600 hover:text-teal-700 hover:underline transition-colors"
           >
             Forgot your password?
           </Link>
@@ -149,7 +149,7 @@ export default function Login() {
         <Button
           type="submit"
           size="lg"
-          className="w-full"
+          className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white border-0 shadow-lg shadow-teal-500/20 hover:shadow-teal-500/30 transition-all"
           disabled={isSubmitting}
         >
           {isSubmitting ? (
@@ -165,9 +165,9 @@ export default function Login() {
           )}
         </Button>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm" style={{ color: '#64748b' }}>
           Don't have an account?{' '}
-          <Link to="/register" className="text-primary font-medium hover:underline">
+          <Link to="/register" className="text-teal-600 font-medium hover:text-teal-700 hover:underline transition-colors">
             Create one
           </Link>
         </p>

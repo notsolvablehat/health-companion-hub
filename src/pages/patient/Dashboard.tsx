@@ -329,7 +329,7 @@ export default function PatientDashboard() {
             </CardHeader>
             <CardContent>
               {analytics.appointments.next_appointment ? (
-                <div className="flex items-center gap-4 p-4 rounded-xl border bg-gradient-to-br from-primary/5 to-transparent">
+                <div className="flex items-center gap-4 p-4 rounded-xl border bg-primary/5">
                   <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <Stethoscope className="w-7 h-7 text-primary" />
                   </div>
@@ -609,7 +609,7 @@ export default function PatientDashboard() {
               {data.assigned_doctors.slice(0, 3).map((doctor) => (
                 <div
                   key={doctor.doctor_id}
-                  className="flex items-center gap-3 p-4 rounded-xl border bg-gradient-to-br from-card to-card/50"
+                  className="flex items-center gap-3 p-4 rounded-xl border bg-card"
                 >
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                     <Stethoscope className="w-6 h-6 text-primary" />
@@ -925,7 +925,7 @@ export default function PatientDashboard() {
 
       {/* AI Stats Summary */}
       {(data.ai_stats.chat_count > 0 || data.ai_stats.analyses_count > 0) && (
-        <Card className="glass-card bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+        <Card className="glass-card bg-primary/5 border-primary/20">
           <CardContent className="py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">

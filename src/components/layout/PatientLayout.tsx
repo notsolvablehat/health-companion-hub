@@ -18,7 +18,7 @@ export function PatientLayout() {
       <div className="lg:pl-56">
         <Header />
         
-        <main className="p-4 lg:p-6 pb-20 lg:pb-6">
+        <main className="p-4 lg:p-5 pb-20 lg:pb-5">
           <Outlet />
         </main>
       </div>

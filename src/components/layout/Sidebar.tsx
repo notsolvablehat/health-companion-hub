@@ -88,7 +88,7 @@ export function Sidebar({ role, isCollapsed = false }: SidebarProps) {
       )}
     >
       {/* Logo */}
-      <div className="h-14 flex items-center px-4 border-b border-sidebar-border">
+      <div className="h-12 flex items-center px-4 border-b border-sidebar-border">
         <Link to={role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard'} className="flex items-center gap-2.5">
           <Activity className="w-5 h-5 text-sidebar-foreground" />
           {!isCollapsed && (

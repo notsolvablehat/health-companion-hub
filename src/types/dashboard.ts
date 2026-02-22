@@ -104,6 +104,22 @@ export interface DoctorDashboardData {
     chief_complaint: string;
     created_at: string;
   }>;
+  // New: Specialty-specific metrics
+  specialty_metrics: Array<{
+    value: string;
+    label: string;
+    sub: string;
+    cls: 'up' | 'down' | 'neutral';
+  }>;
+  // New: Recent patients with names
+  recent_patients: Array<{
+    case_id: string;
+    status: string;
+    chief_complaint: string;
+    patient_name: string;
+    patient_id: string;
+    created_at: string;
+  }>;
   alerts: Array<{
     type: 'info' | 'warning' | 'success' | 'error';
     title: string;

@@ -1,14 +1,15 @@
-import { useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { dashboardService } from '@/services';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/components/ui/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SpecialtyMetrics } from '@/components/common/SpecialtyMetrics';
+import { RecentPatientsTable } from '@/components/common/RecentPatientsTable';
 import {
   ChartContainer,
   ChartTooltip,
@@ -21,49 +22,40 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
+  LineChart,
+  Line,
   PieChart,
   Pie,
   Cell,
+  Legend,
+  ResponsiveContainer,
 } from 'recharts';
 import {
-  Users,
-  FileText,
-  ClipboardCheck,
-  MessageCircle,
   AlertTriangle,
   Clock,
   CheckCircle,
   ArrowRight,
   Bot,
   Activity,
-  UserCheck,
-  AlertCircle,
-  Stethoscope,
-  TrendingUp,
-  Sparkles,
   Calendar,
   BarChart3,
-  Percent,
+  Users,
+  FileText,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { parseBackendDate } from '@/lib/utils';
 
 const DONUT_COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--info))',
-  'hsl(var(--warning))',
-  'hsl(var(--destructive))',
-];
-
-const GENDER_COLORS = [
-  'hsl(var(--info))',
-  'hsl(var(--destructive))',
+  'hsl(142, 76%, 36%)',  // green
+  'hsl(199, 89%, 48%)',  // blue  
+  'hsl(0, 84%, 60%)',    // red
+  'hsl(45, 93%, 47%)',   // orange
+  'hsl(271, 91%, 65%)',  // purple
 ];
 
 export default function DoctorDashboard() {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const [selectedPatient, setSelectedPatient] = useState('amit');
 
   // Main dashboard query
   const { data, isLoading, error } = useQuery({
@@ -74,67 +66,12 @@ export default function DoctorDashboard() {
   });
 
   // Analytics query (independent)
-  const { data: analytics, isLoading: analyticsLoading } = useQuery({
+  const { data: analytics } = useQuery({
     queryKey: ['doctor-analytics'],
     queryFn: () => dashboardService.getDoctorAnalytics(),
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
   });
-
-  // Show alerts as toasts
-  useEffect(() => {
-    if (data?.alerts && data.alerts.length > 0) {
-      data.alerts.forEach((alert) => {
-        toast({
-          title: alert.title,
-          description: alert.message,
-          variant: alert.type === 'error' ? 'destructive' : 'default',
-        });
-      });
-    }
-  }, [data?.alerts, toast]);
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'open':
-        return <Clock className="w-3 h-3" />;
-      case 'under_review':
-        return <Activity className="w-3 h-3" />;
-      case 'approved_by_doctor':
-      case 'approved':
-        return <CheckCircle className="w-3 h-3" />;
-      default:
-        return <FileText className="w-3 h-3" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open':
-        return 'bg-warning/10 text-warning border-warning/20';
-      case 'under_review':
-        return 'bg-info/10 text-info border-info/20';
-      case 'approved_by_doctor':
-      case 'approved':
-        return 'bg-success/10 text-success border-success/20';
-      case 'closed':
-        return 'bg-muted text-muted-foreground';
-      default:
-        return 'bg-secondary text-secondary-foreground';
-    }
-  };
-
-  const getWorkloadColor = (percentage: number) => {
-    if (percentage < 50) return 'bg-success';
-    if (percentage < 80) return 'bg-warning';
-    return 'bg-destructive';
-  };
-
-  const getWorkloadText = (percentage: number) => {
-    if (percentage < 50) return 'Light workload';
-    if (percentage < 80) return 'Moderate workload';
-    return 'Heavy workload';
-  };
 
   // Loading skeleton
   if (isLoading) {
@@ -144,10 +81,10 @@ export default function DoctorDashboard() {
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-4 w-96" />
         </div>
-        <Skeleton className="h-20 rounded-xl" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-xl" />
+        <Skeleton className="h-32 rounded-xl" />
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
         </div>
         <div className="grid lg:grid-cols-2 gap-6">
@@ -178,405 +115,531 @@ export default function DoctorDashboard() {
 
   if (!data) return null;
 
-  // Get greeting based on time
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
-
-  const formatMonth = (month: string) => {
-    const [year, m] = month.split('-');
-    const date = new Date(parseInt(year), parseInt(m) - 1);
-    return format(date, 'MMM');
-  };
-
-  // Stats from mixed sources
-  const stats = [
-    {
-      label: "Today's Appts",
-      value: analytics?.appointments.today ?? '—',
-      icon: Calendar,
-      color: 'bg-primary/10 text-primary',
-      href: '/doctor/appointments',
-    },
-    {
-      label: 'This Week',
-      value: analytics?.appointments.upcoming_week ?? '—',
-      icon: Clock,
-      color: 'bg-info/10 text-info',
-      href: '/doctor/appointments',
-    },
-    {
-      label: 'Completion Rate',
-      value: analytics ? `${Math.round(analytics.appointments.completion_rate)}%` : '—',
-      icon: Percent,
-      color: 'bg-success/10 text-success',
-      href: '/doctor/appointments',
-    },
-    {
-      label: 'Open Cases',
-      value: data.cases.open,
-      icon: FileText,
-      color: 'bg-warning/10 text-warning',
-      href: '/doctor/cases?status=open',
-    },
-  ];
+  // Get current date formatted
+  const currentDate = format(new Date(), 'EEE, dd MMM yyyy');
 
   // Chart configs
-  const appointmentsByMonthConfig: ChartConfig = {
-    count: { label: 'Appointments', color: 'hsl(var(--primary))' },
+  const topDiagnosesConfig: ChartConfig = {
+    count: { label: 'Cases', color: 'hsl(var(--chart-1))' },
   };
 
-  const genderConfig: ChartConfig = {
-    male: { label: 'Male', color: 'hsl(var(--info))' },
-    female: { label: 'Female', color: 'hsl(var(--destructive))' },
+  const visitTypesConfig: ChartConfig = {
+    count: { label: 'Visits', color: 'hsl(var(--chart-2))' },
   };
 
-  const ageGroupConfig: ChartConfig = {
-    count: { label: 'Patients', color: 'hsl(var(--primary))' },
+  // Sample data for charts (in production, this should come from analytics)
+  const topDiagnosesData = analytics?.cases_by_type && analytics.cases_by_type.length > 0 
+    ? analytics.cases_by_type.slice(0, 10).map(item => ({
+        diagnosis: item.type.replace('_', ' '),
+        count: item.count
+      }))
+    : [
+        { diagnosis: 'Urgent', count: 1 },
+        { diagnosis: 'Routine', count: 1 },
+      ];
+
+  const visitTypesData = analytics?.appointments.by_type && analytics.appointments.by_type.length > 0
+    ? analytics.appointments.by_type.map(item => ({
+        type: item.type,
+        count: item.count
+      }))
+    : [
+        { type: 'Consultation', count: 45 },
+        { type: 'Follow-up', count: 30 },
+        { type: 'Emergency', count: 15 },
+        { type: 'Procedure', count: 10 },
+      ];
+
+  // Sample data for retention rate (mock data - should come from backend)
+  const retentionRateData = [
+    { month: 'Sep', followUp: 65, noShow: 18 },
+    { month: 'Oct', followUp: 72, noShow: 15 },
+    { month: 'Nov', followUp: 68, noShow: 20 },
+    { month: 'Dec', followUp: 78, noShow: 18 },
+    { month: 'Jan', followUp: 82, noShow: 16 },
+    { month: 'Feb', followUp: 85, noShow: 12 },
+  ];
+
+  // Sample data for weekly overview (mock data)
+  const weeklyOverviewData = [
+    { day: 'Mon', resolved: 6, ongoing: 4, escalated: 2, referred: 0 },
+    { day: 'Tue', resolved: 8, ongoing: 5, escalated: 0, referred: 2 },
+    { day: 'Wed', resolved: 5, ongoing: 2, escalated: 3, referred: 0 },
+    { day: 'Thu', resolved: 10, ongoing: 4, escalated: 2, referred: 1 },
+    { day: 'Fri', resolved: 9, ongoing: 4, escalated: 0, referred: 2 },
+    { day: 'Sat', resolved: 4, ongoing: 2, escalated: 1, referred: 0 },
+  ];
+
+  // Sample vital trends data for patient selector
+  const vitalTrendsData: Record<string, { name: string; data: any[] }> = {
+    amit: {
+      name: 'Amit Patel (Bed 4)',
+      data: [
+        { time: '02:00', hr: 108, systolic: 96, spo2: 94 },
+        { time: '04:00', hr: 112, systolic: 92, spo2: 93 },
+        { time: '06:00', hr: 118, systolic: 88, spo2: 91 },
+        { time: '08:00', hr: 115, systolic: 94, spo2: 92 },
+        { time: '10:00', hr: 120, systolic: 90, spo2: 90 },
+        { time: '12:00', hr: 116, systolic: 92, spo2: 91 },
+        { time: '14:00', hr: 118, systolic: 92, spo2: 91 },
+      ],
+    },
+    rajesh: {
+      name: 'Rajesh Kumar (Bed 7)',
+      data: [
+        { time: '02:00', hr: 88, systolic: 122, spo2: 96 },
+        { time: '04:00', hr: 92, systolic: 118, spo2: 97 },
+        { time: '06:00', hr: 95, systolic: 125, spo2: 95 },
+        { time: '08:00', hr: 98, systolic: 120, spo2: 96 },
+        { time: '10:00', hr: 96, systolic: 128, spo2: 94 },
+        { time: '12:00', hr: 100, systolic: 124, spo2: 95 },
+        { time: '14:00', hr: 98, systolic: 122, spo2: 96 },
+      ],
+    },
+    sneha: {
+      name: 'Sneha Desai (Ward 3)',
+      data: [
+        { time: '02:00', hr: 75, systolic: 110, spo2: 98 },
+        { time: '04:00', hr: 78, systolic: 108, spo2: 99 },
+        { time: '06:00', hr: 82, systolic: 112, spo2: 97 },
+        { time: '08:00', hr: 80, systolic: 115, spo2: 98 },
+        { time: '10:00', hr: 84, systolic: 118, spo2: 96 },
+        { time: '12:00', hr: 82, systolic: 114, spo2: 97 },
+        { time: '14:00', hr: 79, systolic: 110, spo2: 98 },
+      ],
+    },
   };
-
-  const caseTypeConfig: ChartConfig = {
-    count: { label: 'Cases', color: 'hsl(var(--primary))' },
-  };
-
-  // Donut data for case types
-  const caseTypeDonutData = analytics
-    ? analytics.cases_by_type.filter((d) => d.count > 0)
-    : [];
-
-  // Gender pie data
-  const genderPieData = analytics
-    ? analytics.patient_demographics.by_gender.filter((d) => d.count > 0)
-    : [];
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            {getGreeting()}, Dr. {data.user_info.name}! 👋
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Here's your practice overview • {data.user_info.specialisation}
-          </p>
+    <div className="space-y-5">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b">
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-lg font-semibold">Dr. {data.user_info.name}</h1>
+          <span className="text-xs text-muted-foreground">{currentDate}</span>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/doctor/chat">
-              <Bot className="w-4 h-4 mr-2" />
+        <div className="flex items-center gap-3">
+          <Badge className="bg-success/10 text-success border-success/20">Online</Badge>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/doctor/chat" className="flex items-center gap-2">
+              <Bot className="w-4 h-4" />
               AI Assistant
             </Link>
           </Button>
         </div>
       </div>
 
-      {/* Workload Progress Card */}
-      <Card className="glass-card bg-gradient-to-r from-primary/5 via-transparent to-transparent">
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <TrendingUp className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Patient Load</h3>
-                <p className="text-sm text-muted-foreground">
-                  {data.patient_stats.active} of {data.patient_stats.max} patients •{' '}
-                  {getWorkloadText(data.patient_stats.load_percentage)}
-                </p>
-              </div>
+      {/* Alerts Section */}
+      {data.alerts && data.alerts.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                Alerts
+              </CardTitle>
+              <Badge variant="outline" className="text-xs">
+                {data.alerts.length} active
+              </Badge>
             </div>
-            <span className="text-2xl font-bold text-foreground">
-              {Math.round(data.patient_stats.load_percentage)}%
-            </span>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {data.alerts.slice(0, 4).map((alert, idx) => (
+              <div
+                key={idx}
+                className="p-3 rounded-lg border bg-card/50 hover:border-muted-foreground/20 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-block w-1.5 h-1.5 rounded-full ${
+                        alert.type === 'error'
+                          ? 'bg-destructive shadow-[0_0_6px_rgba(239,68,68,0.4)]'
+                          : 'bg-warning'
+                      }`}
+                    />
+                    <span className="text-xs font-medium">{alert.title}</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">
+                    {parseBackendDate(alert.created_at)
+                      ? formatDistanceToNow(parseBackendDate(alert.created_at)!, { addSuffix: true })
+                      : 'Now'}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground ml-3.5">{alert.message}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Specialty Metrics */}
+      {data.specialty_metrics && data.specialty_metrics.length > 0 && (
+        <SpecialtyMetrics
+          metrics={data.specialty_metrics}
+          specialisation={data.user_info.specialisation}
+        />
+      )}
+
+      {/* Top Diagnoses & Retention Rate */}
+      <div className="grid lg:grid-cols-2 gap-5">
+        {/* Top Diagnoses */}
+        {topDiagnosesData.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                  Top Diagnoses
+                </CardTitle>
+                <Badge variant="outline" className="text-xs">
+                  Last 90 days
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topDiagnosesData} layout="horizontal" margin={{ left: 10, right: 20, top: 10, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                    <XAxis type="number" className="text-xs" />
+                    <YAxis
+                      dataKey="diagnosis"
+                      type="category"
+                      className="text-[10px]"
+                      width={90}
+                      tickFormatter={(value) => {
+                        const str = String(value);
+                        return str.length > 12 ? `${str.slice(0, 10)}...` : str;
+                      }}
+                    />
+                    <Bar dataKey="count" fill="hsl(142, 76%, 36%)" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Retention Rate */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                Retention Rate
+              </CardTitle>
+              <Badge variant="outline" className="text-xs">
+                Follow-up compliance
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={retentionRateData} margin={{ left: 0, right: 20, top: 10, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                  <XAxis dataKey="month" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <Legend 
+                    wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+                    iconType="line"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="followUp" 
+                    stroke="hsl(142, 76%, 36%)" 
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    name="Follow-up Rate"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="noShow" 
+                    stroke="hsl(0, 84%, 60%)" 
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={{ r: 4 }}
+                    name="No-show Rate"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Weekly Overview */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+              Weekly Overview — Patient Outcomes
+            </CardTitle>
+            <Badge variant="outline" className="text-xs">
+              This week
+            </Badge>
           </div>
-          <div className="relative">
-            <Progress
-              value={data.patient_stats.load_percentage}
-              className="h-3"
-            />
-            <div
-              className={`absolute inset-0 h-3 rounded-full ${getWorkloadColor(
-                data.patient_stats.load_percentage
-              )} opacity-20`}
-              style={{ width: `${data.patient_stats.load_percentage}%` }}
-            />
+        </CardHeader>
+        <CardContent>
+          <div className="h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklyOverviewData} margin={{ left: 0, right: 20, top: 10, bottom: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                <XAxis dataKey="day" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Legend 
+                  wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+                  iconType="square"
+                />
+                <Bar dataKey="resolved" stackId="a" fill="hsl(142, 76%, 36%)" name="Resolved" />
+                <Bar dataKey="ongoing" stackId="a" fill="hsl(199, 89%, 48%)" name="Ongoing" />
+                <Bar dataKey="escalated" stackId="a" fill="hsl(0, 84%, 60%)" name="Escalated" />
+                <Bar dataKey="referred" stackId="a" fill="hsl(45, 93%, 47%)" name="Referred Out" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card
-              key={stat.label}
-              className="glass-card hover:shadow-elevated transition-all duration-200 cursor-pointer group"
-              onClick={() => navigate(stat.href)}
-            >
-              <CardContent className="p-6">
-                <div
-                  className={`w-12 h-12 rounded-xl ${stat.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
-                >
-                  <Icon className="w-6 h-6" />
-                </div>
-                <p className="text-3xl font-bold text-foreground">{stat.value}</p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {/* Vital Trend + Visit Types */}
+      <div className="grid lg:grid-cols-[2fr_1fr] gap-5">
+        {/* Vital Trend */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                Vital Trend — Most Critical
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Select value={selectedPatient} onValueChange={setSelectedPatient}>
+                  <SelectTrigger className="h-7 text-xs w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="amit">Amit Patel (Bed 4)</SelectItem>
+                    <SelectItem value="rajesh">Rajesh Kumar (Bed 7)</SelectItem>
+                    <SelectItem value="sneha">Sneha Desai (Ward 3)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Badge variant="outline" className="text-xs">
+                  Last 12 hours
+                </Badge>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={vitalTrendsData[selectedPatient].data} margin={{ left: 0, right: 20, top: 10, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                  <XAxis dataKey="time" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <Legend 
+                    wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+                    iconType="line"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="hr" 
+                    stroke="hsl(0, 84%, 60%)" 
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    name="HR (bpm)"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="systolic" 
+                    stroke="hsl(199, 89%, 48%)" 
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    name="Systolic BP"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="spo2" 
+                    stroke="hsl(45, 93%, 47%)" 
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    name="SpO2 %"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Analytics Charts Row 1: Appointments Over Time + Gender */}
-      {analytics && (
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Appointments Over Time */}
-          {analytics.appointments.by_month.length > 0 && (
-            <Card className="glass-card">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-primary" />
-                  Appointments Over Time
+        {/* Visit Types */}
+        {visitTypesData.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                  Visit Types
                 </CardTitle>
-                <CardDescription>Last 6 months • {analytics.appointments.total} total</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={appointmentsByMonthConfig} className="h-[220px]">
-                  <BarChart data={analytics.appointments.by_month}>
-                    <defs>
-                      <linearGradient id="doctorApptGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.9} />
-                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="month" tickFormatter={formatMonth} className="text-xs" />
-                    <YAxis className="text-xs" allowDecimals={false} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar
-                      dataKey="count"
-                      fill="url(#doctorApptGradient)"
-                      radius={[6, 6, 0, 0]}
-                    />
-                  </BarChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Patient Gender Distribution */}
-          {genderPieData.length > 0 && (
-            <Card className="glass-card">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Users className="w-4 h-4 text-info" />
-                  Patient Gender Distribution
-                </CardTitle>
-                <CardDescription>
-                  {genderPieData.reduce((sum, g) => sum + g.count, 0)} patients total
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={genderConfig} className="h-[220px]">
+                <Badge variant="outline" className="text-xs">
+                  This month
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[280px] flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <ChartTooltip content={<ChartTooltipContent />} />
                     <Pie
-                      data={genderPieData}
+                      data={visitTypesData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={55}
-                      outerRadius={85}
+                      innerRadius={60}
+                      outerRadius={100}
                       dataKey="count"
                       nameKey="type"
                       strokeWidth={2}
                       stroke="hsl(var(--background))"
                     >
-                      {genderPieData.map((_, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={GENDER_COLORS[index % GENDER_COLORS.length]}
-                        />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ChartContainer>
-                <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
-                  {genderPieData.map((entry, index) => (
-                    <div key={entry.type} className="flex items-center gap-1.5 text-xs">
-                      <div
-                        className="w-2.5 h-2.5 rounded-full"
-                        style={{ backgroundColor: GENDER_COLORS[index % GENDER_COLORS.length] }}
-                      />
-                      <span className="text-muted-foreground capitalize">
-                        {entry.type}: {entry.count}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-
-      {/* Analytics Charts Row 2: Age Groups + Case Types */}
-      {analytics && (
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Patient Age Groups */}
-          {analytics.patient_demographics.by_age_group.length > 0 && (
-            <Card className="glass-card">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Users className="w-4 h-4 text-primary" />
-                  Patient Age Groups
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={ageGroupConfig} className="h-[220px]">
-                  <BarChart
-                    data={analytics.patient_demographics.by_age_group}
-                    layout="vertical"
-                  >
-                    <defs>
-                      <linearGradient id="ageGradient" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.9} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis type="number" className="text-xs" allowDecimals={false} />
-                    <YAxis dataKey="type" type="category" className="text-xs" width={50} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar
-                      dataKey="count"
-                      fill="url(#ageGradient)"
-                      radius={[0, 6, 6, 0]}
-                    />
-                  </BarChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Cases by Type Donut */}
-          {caseTypeDonutData.length > 0 && (
-            <Card className="glass-card">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <ClipboardCheck className="w-4 h-4 text-info" />
-                  Cases by Type
-                </CardTitle>
-                <CardDescription>
-                  {caseTypeDonutData.reduce((sum, d) => sum + d.count, 0)} total cases
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={caseTypeConfig} className="h-[220px]">
-                  <PieChart>
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Pie
-                      data={caseTypeDonutData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={85}
-                      dataKey="count"
-                      nameKey="type"
-                      strokeWidth={2}
-                      stroke="hsl(var(--background))"
-                    >
-                      {caseTypeDonutData.map((_, index) => (
+                      {visitTypesData.map((_, index) => (
                         <Cell
                           key={`cell-${index}`}
                           fill={DONUT_COLORS[index % DONUT_COLORS.length]}
                         />
                       ))}
                     </Pie>
+                    <Legend 
+                      wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+                      iconType="circle"
+                    />
                   </PieChart>
-                </ChartContainer>
-                <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
-                  {caseTypeDonutData.map((entry, index) => (
-                    <div key={entry.type} className="flex items-center gap-1.5 text-xs">
-                      <div
-                        className="w-2.5 h-2.5 rounded-full"
-                        style={{ backgroundColor: DONUT_COLORS[index % DONUT_COLORS.length] }}
-                      />
-                      <span className="text-muted-foreground capitalize">
-                        {entry.type.replace('_', ' ')}: {entry.count}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-
-      {/* Reports Stats + Pending Approvals */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Report Analysis Stats */}
-        {analytics && (
-          <Card className="glass-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Activity className="w-5 h-5 text-success" />
-                Report Analysis
-              </CardTitle>
-              <CardDescription>AI-powered report insights</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-5 rounded-xl bg-success/5 border border-success/10">
-                  <p className="text-3xl font-bold text-success">{analytics.reports_analyzed}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Analyzed</p>
-                </div>
-                <div className="text-center p-5 rounded-xl bg-warning/5 border border-warning/10">
-                  <p className="text-3xl font-bold text-warning">{analytics.reports_pending}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Pending</p>
-                </div>
+                </ResponsiveContainer>
               </div>
-              {(analytics.reports_analyzed + analytics.reports_pending) > 0 && (
-                <div className="mt-4">
-                  <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Analysis Progress</span>
-                    <span className="font-medium">
-                      {Math.round(
-                        (analytics.reports_analyzed /
-                          (analytics.reports_analyzed + analytics.reports_pending)) *
-                          100
-                      )}%
-                    </span>
-                  </div>
-                  <Progress
-                    value={
-                      (analytics.reports_analyzed /
-                        (analytics.reports_analyzed + analytics.reports_pending)) *
-                      100
-                    }
-                    className="h-2"
-                  />
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
+      </div>
+
+      {/* Today's Summary */}
+      <div>
+        <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+          Today's Summary
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <Card className="text-center">
+            <CardContent className="p-4">
+              <div className="text-2xl font-semibold mb-1">
+                {analytics?.appointments.today ?? 0}
+              </div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                Scheduled
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="text-center">
+            <CardContent className="p-4">
+              <div className="text-2xl font-semibold text-success mb-1">
+                {analytics?.appointments.completed ?? 0}
+              </div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                Completed
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="text-center">
+            <CardContent className="p-4">
+              <div className="text-2xl font-semibold text-destructive mb-1">
+                {data.pending_approvals.length}
+              </div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                Critical
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="text-center">
+            <CardContent className="p-4">
+              <div className="text-2xl font-semibold mb-1">
+                {data.cases.open}
+              </div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                Pending Reports
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="text-center">
+            <CardContent className="p-4">
+              <div className="text-2xl font-semibold mb-1">
+                {Math.round(data.patient_stats.load_percentage)}%
+              </div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                Patient Load
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Recent Patients */}
+      {data.recent_patients && data.recent_patients.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                Recent Patients
+              </CardTitle>
+              <Badge variant="outline" className="text-xs">
+                Today
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <RecentPatientsTable patients={data.recent_patients} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Case Status Overview + Pending Approvals */}
+      <div className="grid lg:grid-cols-3 gap-5">
+        {/* Case Status */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground font-medium flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Case Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-4 rounded-lg bg-warning/10 border border-warning/20">
+                <Clock className="w-4 h-4 mx-auto text-warning mb-2" />
+                <p className="text-xl font-semibold text-warning">{data.cases.open}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Open</p>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-info/10 border border-info/20">
+                <Activity className="w-4 h-4 mx-auto text-info mb-2" />
+                <p className="text-xl font-semibold text-info">{data.cases.under_review}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Review</p>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-success/10 border border-success/20">
+                <CheckCircle className="w-4 h-4 mx-auto text-success mb-2" />
+                <p className="text-xl font-semibold text-success">{data.cases.approved}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Approved</p>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-muted/50 border">
+                <FileText className="w-4 h-4 mx-auto text-muted-foreground mb-2" />
+                <p className="text-xl font-semibold">{data.cases.closed}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Closed</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Pending Approvals */}
-        <Card className="glass-card border-warning/30">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-warning" />
+        <Card className="lg:col-span-2 border-warning/30">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground font-medium flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-warning" />
                 Pending Approvals
               </CardTitle>
-              <CardDescription>Cases awaiting your review</CardDescription>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/doctor/cases?status=under_review" className="flex items-center gap-1">
+                  View All <ArrowRight className="w-3 h-3" />
+                </Link>
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -588,22 +651,19 @@ export default function DoctorDashboard() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {data.pending_approvals.slice(0, 5).map((approval) => (
+              <div className="space-y-2">
+                {data.pending_approvals.slice(0, 3).map((approval) => (
                   <Link
                     key={approval.case_id}
                     to={`/doctor/cases/${approval.case_id}`}
                     className="flex items-center justify-between p-3 rounded-lg border border-warning/20 bg-warning/5 hover:bg-warning/10 transition-colors group"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <UserCheck className="w-4 h-4 text-warning" />
-                        <p className="font-medium truncate">{approval.patient_name}</p>
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate mt-1">
+                      <p className="text-sm font-medium truncate">{approval.patient_name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
                         {approval.chief_complaint || 'No complaint specified'}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[10px] text-muted-foreground">
                         {parseBackendDate(approval.created_at)
                           ? formatDistanceToNow(parseBackendDate(approval.created_at)!, {
                               addSuffix: true,
@@ -622,169 +682,17 @@ export default function DoctorDashboard() {
         </Card>
       </div>
 
-      {/* Analytics loading skeleton */}
-      {analyticsLoading && !analytics && (
-        <div className="grid lg:grid-cols-2 gap-6">
-          <Skeleton className="h-72 rounded-xl" />
-          <Skeleton className="h-72 rounded-xl" />
-        </div>
-      )}
-
-      {/* Recent Cases + Case Status Overview */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent Cases */}
-        <Card className="glass-card lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-lg font-semibold">Recent Cases</CardTitle>
-              <CardDescription>{data.cases.total} total cases</CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/doctor/cases" className="flex items-center gap-1">
-                View All <ArrowRight className="w-4 h-4" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {data.cases.items.length === 0 ? (
-              <div className="text-center py-8">
-                <FileText className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground">No cases assigned yet</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {data.cases.items.slice(0, 5).map((caseItem) => (
-                  <Link
-                    key={caseItem.case_id}
-                    to={`/doctor/cases/${caseItem.case_id}`}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors group"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">
-                        {caseItem.chief_complaint || 'Untitled Case'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {parseBackendDate(caseItem.created_at)
-                          ? formatDistanceToNow(parseBackendDate(caseItem.created_at)!, {
-                              addSuffix: true,
-                            })
-                          : 'Unknown'}
-                      </p>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={`ml-2 flex items-center gap-1 ${getStatusColor(caseItem.status)}`}
-                    >
-                      {getStatusIcon(caseItem.status)}
-                      {caseItem.status.replace('_', ' ')}
-                    </Badge>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Case Status Overview */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <ClipboardCheck className="w-5 h-5 text-primary" />
-              Case Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-4 rounded-xl bg-warning/10 border border-warning/20">
-                <Clock className="w-5 h-5 mx-auto text-warning mb-2" />
-                <p className="text-2xl font-bold text-warning">{data.cases.open}</p>
-                <p className="text-xs text-muted-foreground">Open</p>
-              </div>
-              <div className="text-center p-4 rounded-xl bg-info/10 border border-info/20">
-                <Activity className="w-5 h-5 mx-auto text-info mb-2" />
-                <p className="text-2xl font-bold text-info">{data.cases.under_review}</p>
-                <p className="text-xs text-muted-foreground">Under Review</p>
-              </div>
-              <div className="text-center p-4 rounded-xl bg-success/10 border border-success/20">
-                <CheckCircle className="w-5 h-5 mx-auto text-success mb-2" />
-                <p className="text-2xl font-bold text-success">{data.cases.approved}</p>
-                <p className="text-xs text-muted-foreground">Approved</p>
-              </div>
-              <div className="text-center p-4 rounded-xl bg-muted/50 border border-border">
-                <FileText className="w-5 h-5 mx-auto text-muted-foreground mb-2" />
-                <p className="text-2xl font-bold text-foreground">{data.cases.closed}</p>
-                <p className="text-xs text-muted-foreground">Closed</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <Card className="glass-card">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            Quick Actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button
-              variant="outline"
-              className="h-auto py-4 flex-col gap-2 hover:bg-primary/5 hover:border-primary/30 transition-colors"
-              asChild
-            >
-              <Link to="/doctor/patients">
-                <Users className="w-6 h-6" />
-                <span>View Patients</span>
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto py-4 flex-col gap-2 hover:bg-primary/5 hover:border-primary/30 transition-colors"
-              asChild
-            >
-              <Link to="/doctor/cases">
-                <FileText className="w-6 h-6" />
-                <span>Review Cases</span>
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto py-4 flex-col gap-2 hover:bg-primary/5 hover:border-primary/30 transition-colors"
-              asChild
-            >
-              <Link to="/doctor/chat">
-                <Bot className="w-6 h-6" />
-                <span>AI Assistant</span>
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto py-4 flex-col gap-2 hover:bg-primary/5 hover:border-primary/30 transition-colors"
-              asChild
-            >
-              <Link to="/doctor/appointments">
-                <Calendar className="w-6 h-6" />
-                <span>Appointments</span>
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* AI Stats Summary */}
+      {/* AI Stats + Quick Actions */}
       {(data.ai_stats.chat_count > 0 || data.ai_stats.analyses_count > 0) && (
-        <Card className="glass-card bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-          <CardContent className="py-6">
+        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+          <CardContent className="py-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="p-3 rounded-xl bg-primary/10">
-                  <Bot className="w-8 h-8 text-primary" />
+                  <Bot className="w-7 h-7 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">AI Clinical Assistant</h3>
+                  <h3 className="font-semibold text-base">AI Clinical Assistant</h3>
                   <p className="text-sm text-muted-foreground">
                     {data.ai_stats.chat_count} consultations • {data.ai_stats.analyses_count} report
                     analyses

@@ -110,7 +110,7 @@ export function Sidebar({ role, isCollapsed = false }: SidebarProps) {
               className={cn(
                 'flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] transition-colors',
                 active
-                  ? 'bg-foreground text-background font-medium'
+                  ? 'bg-primary text-primary-foreground font-medium'
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               )}
             >
@@ -134,7 +134,7 @@ export function Sidebar({ role, isCollapsed = false }: SidebarProps) {
               className={cn(
                 'flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] transition-colors',
                 active
-                  ? 'bg-foreground text-background font-medium'
+                  ? 'bg-primary text-primary-foreground font-medium'
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               )}
             >

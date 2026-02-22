@@ -103,7 +103,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2 px-2 h-8">
                 <Avatar className="w-6 h-6">
-                  <AvatarFallback className="bg-foreground text-background text-[10px] font-medium">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-medium">
                     {getProfileInitials()}
                   </AvatarFallback>
                 </Avatar>

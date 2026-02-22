@@ -15,7 +15,7 @@ export function DoctorLayout() {
       <Sidebar role="doctor" />
 
       {/* Main Content Area */}
-      <div className="lg:pl-64">
+      <div className="lg:pl-56">
         <Header />
         
         <main className="p-4 lg:p-6 pb-20 lg:pb-6">

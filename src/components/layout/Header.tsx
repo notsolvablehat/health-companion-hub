@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -34,7 +33,6 @@ interface HeaderProps {
 export function Header({ onMenuClick }: HeaderProps) {
   const { user, profile, logout, isAuthenticated } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
-  // Using context for notifications - only when authenticated
   const { unreadCount } = useNotification();
 
   const getProfileName = () => {
@@ -58,45 +56,40 @@ export function Header({ onMenuClick }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-background/80 backdrop-blur-md border-b border-border">
+    <header className="sticky top-0 z-30 h-14 bg-background border-b border-border">
       <div className="flex items-center justify-between h-full px-4 lg:px-6">
-        {/* Mobile Menu Button */}
         <Button
           variant="ghost"
           size="icon"
           className="lg:hidden"
           onClick={onMenuClick}
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="w-4 h-4" />
         </Button>
 
-        {/* Spacer for desktop */}
         <div className="hidden lg:block" />
 
-        {/* Right Side Actions */}
-        <div className="flex items-center gap-2">
-          {/* Theme Toggle */}
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="relative"
+            className="h-8 w-8"
           >
             {resolvedTheme === 'dark' ? (
-              <Sun className="w-5 h-5" />
+              <Sun className="w-4 h-4" />
             ) : (
-              <Moon className="w-5 h-5" />
+              <Moon className="w-4 h-4" />
             )}
           </Button>
 
-          {/* Notifications - only show when authenticated */}
           {isAuthenticated && user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="w-5 h-5" />
+                <Button variant="ghost" size="icon" className="relative h-8 w-8">
+                  <Bell className="w-4 h-4" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 w-4 h-4 bg-destructive text-destructive-foreground text-xs font-medium rounded-full flex items-center justify-center">
+                    <span className="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-destructive text-destructive-foreground text-[9px] font-medium rounded-full flex items-center justify-center">
                       {unreadCount}
                     </span>
                   )}
@@ -106,38 +99,37 @@ export function Header({ onMenuClick }: HeaderProps) {
             </DropdownMenu>
           )}
 
-          {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 px-2">
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+              <Button variant="ghost" className="flex items-center gap-2 px-2 h-8">
+                <Avatar className="w-6 h-6">
+                  <AvatarFallback className="bg-foreground text-background text-[10px] font-medium">
                     {getProfileInitials()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="hidden md:inline-block font-medium max-w-[150px] truncate">
+                <span className="hidden md:inline-block text-sm max-w-[120px] truncate">
                   {getProfileName()}
                 </span>
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                <ChevronDown className="w-3 h-3 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel>
                 <div className="flex flex-col">
-                  <span className="font-medium">{getProfileName()}</span>
+                  <span className="text-sm font-medium">{getProfileName()}</span>
                   <span className="text-xs text-muted-foreground">{user?.email}</span>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link to={`/${user?.role}/profile`} className="flex items-center gap-2 cursor-pointer">
-                  <User className="w-4 h-4" />
+                  <User className="w-3.5 h-3.5" />
                   Profile
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to={`/${user?.role}/settings`} className="flex items-center gap-2 cursor-pointer">
-                  <Settings className="w-4 h-4" />
+                  <Settings className="w-3.5 h-3.5" />
                   Settings
                 </Link>
               </DropdownMenuItem>
@@ -146,7 +138,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                 onClick={logout}
                 className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5" />
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>

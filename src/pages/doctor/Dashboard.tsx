@@ -684,7 +684,7 @@ export default function DoctorDashboard() {
 
       {/* AI Stats + Quick Actions */}
       {(data.ai_stats.chat_count > 0 || data.ai_stats.analyses_count > 0) && (
-        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+        <Card className="bg-primary/5 border-primary/20">
           <CardContent className="py-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">

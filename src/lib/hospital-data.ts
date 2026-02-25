@@ -20,7 +20,7 @@ export const HOSPITAL_DATA: HospitalData = {
       id: "F1",
       name: "Ground Floor",
       level: 0,
-      mapImageUrl: "/maps/ground_floor.svg",
+      mapImageUrl: "/maps/ground_floor.png",
       locations: [
         {
           id: "loc-101",
@@ -46,7 +46,7 @@ export const HOSPITAL_DATA: HospitalData = {
           id: "loc-103",
           name: "Radiology & Imaging",
           categoryId: "dept",
-          coordinates: { x: 200, y: 750 },
+          coordinates: { x: 200, y: 200 },
           isNavigable: true,
           details: {
             headOfDept: "Dr. Roentgen",
@@ -59,7 +59,7 @@ export const HOSPITAL_DATA: HospitalData = {
           id: "loc-104",
           name: "Central Pharmacy",
           categoryId: "service",
-          coordinates: { x: 400, y: 600 },
+          coordinates: { x: 200, y: 600 },
           isNavigable: true,
           details: {
             openingHours: "24/7"
@@ -85,7 +85,7 @@ export const HOSPITAL_DATA: HospitalData = {
       id: "F2",
       name: "First Floor",
       level: 1,
-      mapImageUrl: "/maps/first_floor.svg",
+      mapImageUrl: "/maps/first_floor.png",
       locations: [
         {
           id: "loc-201",
@@ -123,7 +123,7 @@ export const HOSPITAL_DATA: HospitalData = {
           id: "loc-204",
           name: "Cafeteria",
           categoryId: "amenity",
-          coordinates: { x: 500, y: 800 },
+          coordinates: { x: 200, y: 800 },
           isNavigable: true,
           details: {
             openingHours: "07:00 - 21:00",
@@ -143,7 +143,7 @@ export const HOSPITAL_DATA: HospitalData = {
       id: "F3",
       name: "Second Floor",
       level: 2,
-      mapImageUrl: "/maps/second_floor.svg",
+      mapImageUrl: "/maps/second_floor.png",
       locations: [
         {
           id: "loc-301",
